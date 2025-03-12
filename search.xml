@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>Fastjson_jndi</title>
+    <title>Fastjson_JNDI</title>
     <url>/2025/03/12/Fastjson-jndi/</url>
     <content><![CDATA[<h1 id="Fastjson的JNDI利用"><a href="#Fastjson的JNDI利用" class="headerlink" title="Fastjson的JNDI利用"></a>Fastjson的JNDI利用</h1><h2 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h2><ul>
 <li>创建一个maven项目</li>
