@@ -1725,7 +1725,7 @@
                 > 
 
 <h2 id="调试分析"><a href="#调试分析" class="headerlink" title="调试分析"></a>调试分析</h2><p>因为我们会用到这个类MethodInvokingFactoryBean.class，我们给他所有方法打上断点，毕竟不知道哪里会给断下来</p>
-<p>想要分析细节一点，所以我们得往上找调用栈（实在太菜了，跟不动，他有多线程，跟晕了）</p>
+<p>想要分析细节一点，所以我们得往上找调用栈</p>
 <img  
                      lazyload
                      src="/images/loading.svg"
@@ -1816,6 +1816,9 @@
 
 
 ]]></content>
+      <categories>
+        <category>漏洞原理分析</category>
+      </categories>
   </entry>
   <entry>
     <title>泛微deleteRequestInfoByXml接口xml注入漏洞</title>
@@ -1894,5 +1897,10 @@
         <tag>泛微</tag>
         <tag>xxe</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>JDBC反序列化</title>
+    <url>/2025/03/15/JDBC%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/</url>
+    <content><![CDATA[]]></content>
   </entry>
 </search>
