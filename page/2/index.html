@@ -288,7 +288,7 @@
         <div class="label text-third-text-color text-sm">分类</div>
     </a>
     <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/archives">
-        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">13</div>
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">14</div>
         <div class="label text-third-text-color text-sm">文章</div>
     </a>
 </div>
@@ -328,7 +328,7 @@
         <div class="label text-third-text-color text-sm">分类</div>
     </a>
     <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/archives">
-        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">13</div>
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">14</div>
         <div class="label text-third-text-color text-sm">文章</div>
     </a>
 </div>
@@ -343,6 +343,83 @@
 			<div class="main-content">
 				<div class="home-content-container">
     <ul class="home-article-list">
+        
+            <li class="home-article-item">
+
+                
+
+                
+
+                
+                <div class="flex flex-col gap-5 px-7 pb-7 pt-7">
+                    <h3 class="home-article-title">
+                        <a href="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/">
+                            泛微deleteRequestInfoByXml接口xml注入漏洞
+                        </a>
+                    </h3>
+
+                    <div class="home-article-content markdown-body">
+                        
+                            
+                            &#x2F;rest&#x2F;ofs&#x2F;deleteRequestInfoByXml 
+发现泛微很多xxe的地方都会出现xmltomap，这跟到后面会调用SAXReader.read()造成xxe注入漏洞 
+
+直接跟现有xmltomap存在漏洞的类，观察哪个函数调用了他，然后再往上找接口
+更sink一点，全局搜索SAXReader()实例化的地方，看看是否调用了.read()函数，...
+                        
+                    </div>
+
+                    <div class="home-article-meta-info-container">
+    <div class="home-article-meta-info">
+        <span><i class="fa-solid fa-calendars"></i>&nbsp;
+            <span class="home-article-date" data-date="Wed Mar 12 2025 20:04:35 GMT+0800">
+                
+                    2025-03-12
+                
+            </span>
+        </span>
+        
+            <span class="home-article-category">
+                <i class="fa-solid fa-folders"></i>&nbsp;
+            <ul>
+                
+                
+                    
+                        
+                        <li>
+                            <a href="/categories/%E4%BB%A3%E7%A0%81%E5%AE%A1%E8%AE%A1/">代码审计</a>&nbsp;
+                        </li>
+                    
+                    
+                
+            </ul>
+        </span>
+        
+        
+            <span class="home-article-tag">
+                <i class="fa-solid fa-tags"></i>&nbsp;
+                <ul>
+                    
+                        <li>
+                            
+                            <a href="/tags/%E6%B3%9B%E5%BE%AE/">泛微</a>&nbsp;
+                        </li>
+                    
+                        <li>
+                            | 
+                            <a href="/tags/xxe/">xxe</a>&nbsp;
+                        </li>
+                    
+                </ul>
+            </span>
+        
+    </div>
+
+    <a href="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/">阅读全文<span class="seo-reader-text">泛微deleteRequestInfoByXml接口xml注入漏洞</span>&nbsp;<i class="fa-solid fa-angle-right"></i></a>
+</div>
+
+                </div>
+            </li>
         
             <li class="home-article-item">
 
@@ -569,7 +646,7 @@ Qu...
                 
                 <p class="post-count space-x-0.5">
                     <span>
-                        共撰写了 13 篇文章
+                        共撰写了 14 篇文章
                     </span>
                     
                 </p>
