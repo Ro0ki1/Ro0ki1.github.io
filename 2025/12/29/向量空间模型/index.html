@@ -358,13 +358,28 @@
 		<div class="article-content markdown-body px-2 sm:px-6 md:px-8 pb-8">
 			<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p><strong>朴素贝叶斯在运用了统计词频以及条件概率来推测语义。但是在一些例如双重否定表肯定或者一些人类能认为是积极但是带有not等词的时候，朴素贝叶斯就会分类错误。朴素贝叶斯的时候统计了在Pos条件下的词的概率，以及Neg条件下词的概率。如果两边词完全不同呢，那要怎么比较。在朴素贝叶斯中，中性词在Pos和Neg条件下出现的概率几乎相同。所以可以忽略。两边完全不同如何解决呢？</strong> </p>
 <p>空间向量模型，可以用于解决左边只有一个词不同但是表达不同意思，或者完全不同词表达相同意思的情况</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/29/%E5%90%91%E9%87%8F%E7%A9%BA%E9%97%B4%E6%A8%A1%E5%9E%8B/image-20251229230753774.png"
+                      class="" title="image-20251229230753774"
+                > 
 
 <p>向量空间模型可以分析句子的依赖关系</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/29/%E5%90%91%E9%87%8F%E7%A9%BA%E9%97%B4%E6%A8%A1%E5%9E%8B/image-20251229231325144.png"
+                      class="" title="image-20251229231325144"
+                > 
 
 <p>有的时候前面依赖后面，后面依赖前面。</p>
-<h1 id="词距向量"><a href="#词距向量" class="headerlink" title="词距向量"></a>词距向量</h1><h2 id="word-by-word-design"><a href="#word-by-word-design" class="headerlink" title="word by word design"></a>word by word design</h2> 
+<h1 id="词距向量"><a href="#词距向量" class="headerlink" title="词距向量"></a>词距向量</h1><h2 id="word-by-word-design"><a href="#word-by-word-design" class="headerlink" title="word by word design"></a>word by word design</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/29/%E5%90%91%E9%87%8F%E7%A9%BA%E9%97%B4%E6%A8%A1%E5%9E%8B/image-20251229235937859.png"
+                      class="" title="image-20251229235937859"
+                > 
 
 <p>这里的distance <strong>k</strong> 的意思是距离行标签词，距离为2以内的出现的词的次数。<br>在本文中：</p>
 <ul>
@@ -375,70 +390,150 @@
 </ul>
 <p><strong>k可以取1到n之间，n为词汇表大小</strong> </p>
 <h2 id="word-by-document-design"><a href="#word-by-document-design" class="headerlink" title="word by document design"></a>word by document design</h2><p>多文档：</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/29/%E5%90%91%E9%87%8F%E7%A9%BA%E9%97%B4%E6%A8%A1%E5%9E%8B/image-20251230000411509.png"
+                      class="" title="image-20251230000411509"
+                > 
 
 <p>这里可以看出类似标签，data在每个种类里面出现的次数</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/29/%E5%90%91%E9%87%8F%E7%A9%BA%E9%97%B4%E6%A8%A1%E5%9E%8B/image-20251230000611527.png"
+                      class="" title="image-20251230000611527"
+                > 
 
 <p>这里可以看出Economy和ML（机器学习）更加接近，与娱乐更远。用欧几里德距离和余弦相似度获取角度和距离。</p>
 <h1 id="欧几里德距离"><a href="#欧几里德距离" class="headerlink" title="欧几里德距离"></a>欧几里德距离</h1><p>二维：</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/29/%E5%90%91%E9%87%8F%E7%A9%BA%E9%97%B4%E6%A8%A1%E5%9E%8B/image-20251230000949884.png"
+                      class="" title="image-20251230000949884"
+                > 
 
 <p>其实就是勾股定理，在线代里面称为范数</p>
 <p>高纬度欧几里得距离计算公式：</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/29/%E5%90%91%E9%87%8F%E7%A9%BA%E9%97%B4%E6%A8%A1%E5%9E%8B/image-20251230001101112.png"
+                      class="" title="image-20251230001101112"
+                > 
 
 <h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">import numpy as np</span><br><span class="line"></span><br><span class="line">v = np.array([1,0,6])</span><br><span class="line">w = np.array([2,4,8])</span><br><span class="line">distance = np.linalg.norm(v-w)</span><br><span class="line">print(distance)</span><br></pre></td></tr></table></figure></div>
 
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/29/%E5%90%91%E9%87%8F%E7%A9%BA%E9%97%B4%E6%A8%A1%E5%9E%8B/image-20251230001841609.png"
+                      class="" title="image-20251230001841609"
+                > 
 
 <p><strong>通过计算欧几里德距离可以获取两个文档或者单词的相似程度</strong> </p>
-<h1 id="余弦相似度"><a href="#余弦相似度" class="headerlink" title="余弦相似度"></a>余弦相似度</h1> 
+<h1 id="余弦相似度"><a href="#余弦相似度" class="headerlink" title="余弦相似度"></a>余弦相似度</h1><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/29/%E5%90%91%E9%87%8F%E7%A9%BA%E9%97%B4%E6%A8%A1%E5%9E%8B/image-20251230002230050.png"
+                      class="" title="image-20251230002230050"
+                > 
 
 <p>其实就是计算余弦值来判断角度。来衡量哪两个向量更加接近</p>
 <p>余弦公式：</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/29/%E5%90%91%E9%87%8F%E7%A9%BA%E9%97%B4%E6%A8%A1%E5%9E%8B/image-20251230002503678.png"
+                      class="" title="image-20251230002503678"
+                > 
 
 <div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">import numpy as np</span><br><span class="line"></span><br><span class="line">v = np.array([1,0,6])</span><br><span class="line">w = np.array([2,4,8])</span><br><span class="line"># 余弦公式，分子是两个向量点积</span><br><span class="line">vw = np.dot(v,w)</span><br><span class="line">print(vw)</span><br><span class="line"></span><br><span class="line"># 分母是两个向量的单独的范数即他们的模长</span><br><span class="line">vd = np.linalg.norm(v)</span><br><span class="line">wd = np.linalg.norm(w)</span><br><span class="line"></span><br><span class="line">print(vw/(vd*wd))</span><br></pre></td></tr></table></figure></div>
 
-<h1 id="向量空间操作"><a href="#向量空间操作" class="headerlink" title="向量空间操作"></a>向量空间操作</h1> 
+<h1 id="向量空间操作"><a href="#向量空间操作" class="headerlink" title="向量空间操作"></a>向量空间操作</h1><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/29/%E5%90%91%E9%87%8F%E7%A9%BA%E9%97%B4%E6%A8%A1%E5%9E%8B/image-20251230005735767.png"
+                      class="" title="image-20251230005735767"
+                > 
 
 <p>在已知USA对应Washington的情况下，我们可以让俄罗斯也经过这种向量操作进行寻找然后在那个附近的点。<br>USA和Washington的向量是[5,-1],故我们让俄罗斯加向量[5,-1],然后在(10,4)附近寻找靠近的点。</p>
 <h1 id="可视化与PCA（主成分分析）"><a href="#可视化与PCA（主成分分析）" class="headerlink" title="可视化与PCA（主成分分析）"></a>可视化与PCA（主成分分析）</h1><p><strong>PCA算法主要是降维算法，为我们找到不相关的特征，有利于我们可视化</strong> </p>
 <p>将N维向量绘制成2维图</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/29/%E5%90%91%E9%87%8F%E7%A9%BA%E9%97%B4%E6%A8%A1%E5%9E%8B/image-20251230010322591.png"
+                      class="" title="image-20251230010322591"
+                > 
 
 <p>高维然后通过˙主成分分析变为2维，获取更少特征表示</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/29/%E5%90%91%E9%87%8F%E7%A9%BA%E9%97%B4%E6%A8%A1%E5%9E%8B/image-20251230010625795.png"
+                      class="" title="image-20251230010625795"
+                > 
 
 <p>将不相关的特征投影到一维空间</p>
 <p><em>协方差矩阵，协方差是概率论里面判断两个事件相关性的，在线代中可以计算出不相关特征的方向。协方差矩阵的特征值是数据集在每个特征值上的方差</em> </p>
-<h2 id="归一化"><a href="#归一化" class="headerlink" title="归一化"></a>归一化</h2> 
+<h2 id="归一化"><a href="#归一化" class="headerlink" title="归一化"></a>归一化</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/29/%E5%90%91%E9%87%8F%E7%A9%BA%E9%97%B4%E6%A8%A1%E5%9E%8B/image-20251230011316675.png"
+                      class="" title="image-20251230011316675"
+                > 
 
 <div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">import numpy as np</span><br><span class="line">import matplotlib.pyplot as plt</span><br><span class="line"></span><br><span class="line"># ===================== 步骤1：准备原始数据 + 数据预处理（Mean Normalize） =====================</span><br><span class="line"># 示例数据：5个样本，2个特征（特征1：身高(cm)，特征2：体重(kg)）</span><br><span class="line">X = np.array([</span><br><span class="line">    [165, 50],</span><br><span class="line">    [170, 55],</span><br><span class="line">    [175, 60],</span><br><span class="line">    [180, 65],</span><br><span class="line">    [185, 70]</span><br><span class="line">])</span><br><span class="line">print(&quot;原始数据：\n&quot;, X)</span><br><span class="line"></span><br><span class="line"># 步骤1.1：标准化（均值归一化+方差缩放，对应图片的Mean Normalize）</span><br><span class="line"># 公式：x = (x - 均值) / 标准差</span><br><span class="line">X_mean = np.mean(X, axis=0)  # 按列计算均值</span><br><span class="line">X_std = np.std(X, axis=0)    # 按列计算标准差</span><br><span class="line">X_scaled = (X - X_mean) / X_std  # 标准化后的数据</span><br><span class="line">print(&quot;\n标准化后的数据：\n&quot;, X_scaled)</span><br></pre></td></tr></table></figure></div>
 
 
 
-<h2 id="计算协方差矩阵"><a href="#计算协方差矩阵" class="headerlink" title="计算协方差矩阵"></a>计算协方差矩阵</h2> 
+<h2 id="计算协方差矩阵"><a href="#计算协方差矩阵" class="headerlink" title="计算协方差矩阵"></a>计算协方差矩阵</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/29/%E5%90%91%E9%87%8F%E7%A9%BA%E9%97%B4%E6%A8%A1%E5%9E%8B/image-20251230011336747.png"
+                      class="" title="image-20251230011336747"
+                > 
 
 <div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">import numpy as np</span><br><span class="line">import matplotlib.pyplot as plt</span><br><span class="line"></span><br><span class="line"># ===================== 步骤1：准备原始数据 + 数据预处理（Mean Normalize） =====================</span><br><span class="line"># 示例数据：5个样本，2个特征（特征1：身高(cm)，特征2：体重(kg)）</span><br><span class="line">X = np.array([</span><br><span class="line">    [165, 50],</span><br><span class="line">    [170, 55],</span><br><span class="line">    [175, 60],</span><br><span class="line">    [180, 65],</span><br><span class="line">    [185, 70]</span><br><span class="line">])</span><br><span class="line">print(&quot;原始数据：\n&quot;, X)</span><br><span class="line"></span><br><span class="line"># 步骤1.1：标准化（均值归一化+方差缩放，对应图片的Mean Normalize）</span><br><span class="line"># 公式：x = (x - 均值) / 标准差</span><br><span class="line">X_mean = np.mean(X, axis=0)  # 按列计算均值</span><br><span class="line">X_std = np.std(X, axis=0)    # 按列计算标准差</span><br><span class="line">X_scaled = (X - X_mean) / X_std  # 标准化后的数据</span><br><span class="line">print(&quot;\n标准化后的数据：\n&quot;, X_scaled)</span><br><span class="line"></span><br><span class="line"># ===================== 步骤2：计算协方差矩阵（Covariance Matrix） =====================</span><br><span class="line"># 公式：Σ = (1/m) * X^T · X （m是样本数）</span><br><span class="line">m = X_scaled.shape[0]  # 样本数=5</span><br><span class="line">cov_matrix = (1/m) * np.dot(X_scaled.T, X_scaled)</span><br><span class="line">print(&quot;\n协方差矩阵Σ：\n&quot;, cov_matrix)</span><br><span class="line"># 解释：对角线是各特征的方差（这里两个特征方差都是1，因为标准化了），非对角线是协方差（≈1，说明身高和体重高度正相关）</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
 
 <p><em><strong>X^T的意思是X的转置矩阵</strong></em> </p>
-<h2 id="奇异值分解"><a href="#奇异值分解" class="headerlink" title="奇异值分解"></a>奇异值分解</h2> 
+<h2 id="奇异值分解"><a href="#奇异值分解" class="headerlink" title="奇异值分解"></a>奇异值分解</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/29/%E5%90%91%E9%87%8F%E7%A9%BA%E9%97%B4%E6%A8%A1%E5%9E%8B/image-20251230011357476.png"
+                      class="" title="image-20251230011357476"
+                > 
 
 <div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">import numpy as np</span><br><span class="line">import matplotlib.pyplot as plt</span><br><span class="line"></span><br><span class="line"># ===================== 步骤1：准备原始数据 + 数据预处理（Mean Normalize） =====================</span><br><span class="line"># 示例数据：5个样本，2个特征（特征1：身高(cm)，特征2：体重(kg)）</span><br><span class="line">X = np.array([</span><br><span class="line">    [165, 50],</span><br><span class="line">    [170, 55],</span><br><span class="line">    [175, 60],</span><br><span class="line">    [180, 65],</span><br><span class="line">    [185, 70]</span><br><span class="line">])</span><br><span class="line">print(&quot;原始数据：\n&quot;, X)</span><br><span class="line"></span><br><span class="line"># 步骤1.1：标准化（均值归一化+方差缩放，对应图片的Mean Normalize）</span><br><span class="line"># 公式：x = (x - 均值) / 标准差</span><br><span class="line">X_mean = np.mean(X, axis=0)  # 按列计算均值</span><br><span class="line">X_std = np.std(X, axis=0)    # 按列计算标准差</span><br><span class="line">X_scaled = (X - X_mean) / X_std  # 标准化后的数据</span><br><span class="line">print(&quot;\n标准化后的数据：\n&quot;, X_scaled)</span><br><span class="line"></span><br><span class="line"># ===================== 步骤2：计算协方差矩阵（Covariance Matrix） =====================</span><br><span class="line"># 公式：Σ = (1/m) * X^T · X （m是样本数）</span><br><span class="line">m = X_scaled.shape[0]  # 样本数=5</span><br><span class="line">cov_matrix = (1/m) * np.dot(X_scaled.T, X_scaled)</span><br><span class="line">print(&quot;\n协方差矩阵Σ：\n&quot;, cov_matrix)</span><br><span class="line"># 解释：对角线是各特征的方差（这里两个特征方差都是1，因为标准化了），非对角线是协方差（≈1，说明身高和体重高度正相关）</span><br><span class="line"></span><br><span class="line"># ===================== 步骤3：奇异值分解（SVD）→ 提取主成分 =====================</span><br><span class="line"># SVD分解：Σ = U · S · V^T （对应图片的SVD步骤）</span><br><span class="line"># U：特征向量矩阵（主成分方向），S：特征值矩阵（主成分方差），V^T：转置特征向量矩阵</span><br><span class="line">U, S, Vt = np.linalg.svd(cov_matrix)</span><br><span class="line">print(&quot;\nSVD分解得到的U（特征向量矩阵/主成分方向）：\n&quot;, U)</span><br><span class="line">print(&quot;SVD分解得到的S（特征值/方差）：\n&quot;, S)</span><br><span class="line"># 解释：</span><br><span class="line"># - U的每一列是一个主成分方向（第一列是方差最大的主成分，对应图片的蓝色箭头；第二列是次大的，正交于第一列）</span><br><span class="line"># - S中的数值是主成分的方差（第一值≈2，第二值≈0，说明第一主成分能解释几乎所有数据信息）</span><br></pre></td></tr></table></figure></div>
 
 <p>利用numpy将协方差矩阵进行奇异值分解</p>
-<h2 id="降维"><a href="#降维" class="headerlink" title="降维"></a>降维</h2> 
+<h2 id="降维"><a href="#降维" class="headerlink" title="降维"></a>降维</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/29/%E5%90%91%E9%87%8F%E7%A9%BA%E9%97%B4%E6%A8%A1%E5%9E%8B/image-20251230011414996.png"
+                      class="" title="image-20251230011414996"
+                > 
 
 <div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">import numpy as np</span><br><span class="line">import matplotlib.pyplot as plt</span><br><span class="line"></span><br><span class="line"># ===================== 步骤1：准备原始数据 + 数据预处理（Mean Normalize） =====================</span><br><span class="line"># 示例数据：5个样本，2个特征（特征1：身高(cm)，特征2：体重(kg)）</span><br><span class="line">X = np.array([</span><br><span class="line">    [165, 50],</span><br><span class="line">    [170, 55],</span><br><span class="line">    [175, 60],</span><br><span class="line">    [180, 65],</span><br><span class="line">    [185, 70]</span><br><span class="line">])</span><br><span class="line">print(&quot;原始数据：\n&quot;, X)</span><br><span class="line"></span><br><span class="line"># 步骤1.1：标准化（均值归一化+方差缩放，对应图片的Mean Normalize）</span><br><span class="line"># 公式：x = (x - 均值) / 标准差</span><br><span class="line">X_mean = np.mean(X, axis=0)  # 按列计算均值</span><br><span class="line">X_std = np.std(X, axis=0)    # 按列计算标准差</span><br><span class="line">X_scaled = (X - X_mean) / X_std  # 标准化后的数据</span><br><span class="line">print(&quot;\n标准化后的数据：\n&quot;, X_scaled)</span><br><span class="line"></span><br><span class="line"># ===================== 步骤2：计算协方差矩阵（Covariance Matrix） =====================</span><br><span class="line"># 公式：Σ = (1/m) * X^T · X （m是样本数）</span><br><span class="line">m = X_scaled.shape[0]  # 样本数=5</span><br><span class="line">cov_matrix = (1/m) * np.dot(X_scaled.T, X_scaled)</span><br><span class="line">print(&quot;\n协方差矩阵Σ：\n&quot;, cov_matrix)</span><br><span class="line"># 解释：对角线是各特征的方差（这里两个特征方差都是1，因为标准化了），非对角线是协方差（≈1，说明身高和体重高度正相关）</span><br><span class="line"></span><br><span class="line"># ===================== 步骤3：奇异值分解（SVD）→ 提取主成分 =====================</span><br><span class="line"># SVD分解：Σ = U · S · V^T （对应图片的SVD步骤）</span><br><span class="line"># U：特征向量矩阵（主成分方向），S：特征值矩阵（主成分方差），V^T：转置特征向量矩阵</span><br><span class="line">U, S, Vt = np.linalg.svd(cov_matrix)</span><br><span class="line">print(&quot;\nSVD分解得到的U（特征向量矩阵/主成分方向）：\n&quot;, U)</span><br><span class="line">print(&quot;SVD分解得到的S（特征值/方差）：\n&quot;, S)</span><br><span class="line"># 解释：</span><br><span class="line"># - U的每一列是一个主成分方向（第一列是方差最大的主成分，对应图片的蓝色箭头；第二列是次大的，正交于第一列）</span><br><span class="line"># - S中的数值是主成分的方差（第一值≈2，第二值≈0，说明第一主成分能解释几乎所有数据信息）</span><br><span class="line"></span><br><span class="line"># ===================== 步骤4：选择主成分 + 投影降维 =====================</span><br><span class="line"># 步骤4.1：选择前k个主成分（这里降维到1维，选U的第一列）</span><br><span class="line">k = 2</span><br><span class="line">U_reduce = U[:, :k]  # 取U的前k列（核心主成分方向）</span><br><span class="line"></span><br><span class="line"># 步骤4.2：投影降维（原始数据 → 低维空间）</span><br><span class="line"># 公式：Z = X_scaled · U_reduce</span><br><span class="line">Z = np.dot(X_scaled, U_reduce)</span><br><span class="line">print(&quot;\n降维后的1维数据Z：\n&quot;, Z)</span><br></pre></td></tr></table></figure></div>
 
 <p><em><strong>降维公式是将归一化后的矩阵和协方差矩阵分解得来特征向量的前k列特征矩阵相乘</strong></em> </p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/29/%E5%90%91%E9%87%8F%E7%A9%BA%E9%97%B4%E6%A8%A1%E5%9E%8B/image-20251230013138725.png"
+                      class="" title="image-20251230013138725"
+                > 
 
 <h1 id="示例代码"><a href="#示例代码" class="headerlink" title="示例代码"></a>示例代码</h1><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br></pre></td><td class="code"><pre><span class="line">import numpy as np</span><br><span class="line">import matplotlib.pyplot as plt</span><br><span class="line"></span><br><span class="line"># 创建简单的三维数据</span><br><span class="line">np.random.seed(42)</span><br><span class="line">n_points = 30</span><br><span class="line"></span><br><span class="line"># 沿对角线生成数据</span><br><span class="line">t = np.linspace(-1, 1, n_points)</span><br><span class="line">X = np.column_stack([t, t, t])  # 沿(1,1,1)方向</span><br><span class="line"></span><br><span class="line"># 添加噪声</span><br><span class="line">noise = np.random.normal(0, 0.1, (n_points, 3))</span><br><span class="line">X += noise</span><br><span class="line"></span><br><span class="line"># PCA降维</span><br><span class="line"># 1. 中心化</span><br><span class="line">X_centered = X - np.mean(X, axis=0)</span><br><span class="line"></span><br><span class="line"># 2. 计算协方差矩阵</span><br><span class="line">cov_matrix = np.cov(X_centered.T)</span><br><span class="line"></span><br><span class="line"># 3. 特征分解</span><br><span class="line">eigenvalues, eigenvectors = np.linalg.eig(cov_matrix)</span><br><span class="line"></span><br><span class="line"># 4. 排序</span><br><span class="line">sorted_idx = np.argsort(eigenvalues)[::-1]</span><br><span class="line">eigenvectors_sorted = eigenvectors[:, sorted_idx]</span><br><span class="line"></span><br><span class="line"># 5. 降维到2D</span><br><span class="line">U_reduce = eigenvectors_sorted[:, :2]</span><br><span class="line">Z_2d = np.dot(X_centered, U_reduce)</span><br><span class="line"></span><br><span class="line"># 创建图形</span><br><span class="line">fig = plt.figure(figsize=(12, 5))</span><br><span class="line"></span><br><span class="line"># 子图1：3D原始数据 + PCA方向</span><br><span class="line">ax1 = fig.add_subplot(1, 2, 1, projection=&#x27;3d&#x27;)</span><br><span class="line"></span><br><span class="line"># 绘制原始数据点</span><br><span class="line">ax1.scatter(X[:, 0], X[:, 1], X[:, 2], </span><br><span class="line">           c=&#x27;blue&#x27;, s=50, alpha=0.7, label=&#x27;Data points&#x27;)</span><br><span class="line"></span><br><span class="line"># 绘制PCA方向</span><br><span class="line">colors = [&#x27;red&#x27;, &#x27;green&#x27;]</span><br><span class="line">for i in range(2):</span><br><span class="line">    vec = eigenvectors_sorted[:, i] * np.sqrt(eigenvalues[sorted_idx][i]) * 1.5</span><br><span class="line">    ax1.quiver(0, 0, 0, </span><br><span class="line">              vec[0], vec[1], vec[2],</span><br><span class="line">              color=colors[i], linewidth=2, </span><br><span class="line">              arrow_length_ratio=0.1, </span><br><span class="line">              label=f&#x27;PC&#123;i+1&#125;&#x27;)</span><br><span class="line"></span><br><span class="line">ax1.set_xlabel(&#x27;X&#x27;)</span><br><span class="line">ax1.set_ylabel(&#x27;Y&#x27;)</span><br><span class="line">ax1.set_zlabel(&#x27;Z&#x27;)</span><br><span class="line">ax1.set_title(&#x27;3D Data with PCA Directions&#x27;)</span><br><span class="line">ax1.legend()</span><br><span class="line">ax1.grid(True, alpha=0.3)</span><br><span class="line"></span><br><span class="line"># 子图2：2D投影结果</span><br><span class="line">ax2 = fig.add_subplot(1, 2, 2)</span><br><span class="line">ax2.scatter(Z_2d[:, 0], Z_2d[:, 1], </span><br><span class="line">           c=&#x27;green&#x27;, s=50, alpha=0.7)</span><br><span class="line"></span><br><span class="line"># 添加坐标轴</span><br><span class="line">ax2.axhline(y=0, color=&#x27;gray&#x27;, linestyle=&#x27;-&#x27;, alpha=0.3)</span><br><span class="line">ax2.axvline(x=0, color=&#x27;gray&#x27;, linestyle=&#x27;-&#x27;, alpha=0.3)</span><br><span class="line"></span><br><span class="line">ax2.set_xlabel(&#x27;PC1 (Main Direction)&#x27;)</span><br><span class="line">ax2.set_ylabel(&#x27;PC2&#x27;)</span><br><span class="line">ax2.set_title(&#x27;Data After PCA (2D Projection)&#x27;)</span><br><span class="line">ax2.grid(True, alpha=0.3)</span><br><span class="line">ax2.axis(&#x27;equal&#x27;)</span><br><span class="line"></span><br><span class="line">plt.tight_layout()</span><br><span class="line">plt.show()</span><br><span class="line"></span><br><span class="line"># 输出简单信息</span><br><span class="line">print(f&quot;Original data shape: &#123;X.shape&#125;&quot;)</span><br><span class="line">print(f&quot;2D projection shape: &#123;Z_2d.shape&#125;&quot;)</span><br><span class="line">print(f&quot;\nEigenvalues: &#123;eigenvalues[sorted_idx]&#125;&quot;)</span><br><span class="line">print(f&quot;PC1 direction: &#123;eigenvectors_sorted[:, 0]&#125;&quot;)</span><br></pre></td></tr></table></figure></div>
 
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/29/%E5%90%91%E9%87%8F%E7%A9%BA%E9%97%B4%E6%A8%A1%E5%9E%8B/image-20251230014153546.png"
+                      class="" title="image-20251230014153546"
+                > 
 
 
 		</div>
