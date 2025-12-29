@@ -342,29 +342,69 @@
 <p>js代码被混淆，无混淆地址在url后添加easy.php</p>
 <h1 id="搭建"><a href="#搭建" class="headerlink" title="搭建"></a>搭建</h1><p><a class="link"   target="_blank" rel="noopener" href="https://github.com/SwagXz/encrypt-labs?tab=readme-ov-file" >https://github.com/SwagXz/encrypt-labs?tab=readme-ov-file<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
 <p>所需条件<strong>Nginx+mysql+php8</strong> </p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328222632631.png"
+                      class="" title="image-20250328222632631"
+                > 
 
 <p>phpstudy的软件管理可以安装php8</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328222659656.png"
+                      class="" title="image-20250328222659656"
+                > 
 
 <p>开启mysql+nginx</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328222729361.png"
+                      class="" title="image-20250328222729361"
+                > 
 
 <p>创建网站，将压缩包解压的网站源码放到www目录下</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328222800466.png"
+                      class="" title="image-20250328222800466"
+                > 
 
 <p>然后修改database.php</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328222826892.png"
+                      class="" title="image-20250328222826892"
+                > 
 
 <p>修改数据库的账号密码，默认的不是root&#x2F;root</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328222910676.png"
+                      class="" title="image-20250328222910676"
+                > 
 
 <p>然后新建一个encryptdb的数据库并且导入.sql数据库执行文件即可。</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328222943899.png"
+                      class="" title="image-20250328222943899"
+                > 
 
 <p>账号&#x2F;密码 ： admin&#x2F;123456</p>
 <h1 id="练习"><a href="#练习" class="headerlink" title="练习"></a>练习</h1><p>因为我们需要用到burp抓包且我是虚拟机搭建。网站访问的时候需要使用虚拟机的ip地址去访问网站，burp默认不住啊本地地址，使用未混淆的代码进行初步学习，记得在url加上<em>easy.php</em> </p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328223220521.png"
+                      class="" title="image-20250328223220521"
+                > 
 
 <p>我们使用爆破的方式去测试吧。模拟我们不知道密码的情况下。</p>
 <ul>
@@ -372,48 +412,113 @@
 <li>加密的网站：需要将参数进行加密过后再进行爆棚</li>
 </ul>
 <h2 id="AES固定key"><a href="#AES固定key" class="headerlink" title="AES固定key"></a>AES固定key</h2><h3 id="加密分析"><a href="#加密分析" class="headerlink" title="加密分析"></a>加密分析</h3><p>输入错误密码：admin&#x2F;admin</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328223550356.png"
+                      class="" title="image-20250328223550356"
+                > 
 
 <p>发现本应该为admin&#x2F;admin的参数变成了encryptedData&#x3D;nArXfVdnoe67UzojAPP2X%2B6qSiznLMBAI3a5Bi%2BzlNyFzdExDwmDvIKgDjWWWrZ2</p>
 <p>去前端打上断点看一下加密逻辑</p>
 <p>我的习惯是打开网络请求看一下堆栈。然后再打断点</p>
-  
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328224729178.png"
+                      class="" title="image-20250328224729178"
+                >  
 <p>输入账号密码点击登陆<br>然后点击发起程序就可以看到调用栈了。这里很简单的就可以看出来，onclick进行了点击操作。那sendDataAes就是进行了对数据的加密以及发送操作的，所以我们点进去看一下前端js代码。</p>
-  
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328224951380.png"
+                      class="" title="image-20250328224951380"
+                >  
 
 <p>此时我们就可以知道数据被加密的流程。我们可以在控制台尝试一下，不过我们可以先断点获取我们输入的数据被加密前最后一步的格式，直接复制数据。</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328225209254.png"
+                      class="" title="image-20250328225209254"
+                > 
 
 <p>jsonData: “{&quot;username&quot;:&quot;admin&quot;,&quot;password&quot;:&quot;admin&quot;}”就是我们数据被加密前的格式。然后我们可以复制加密代码放到控制台</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328225458852.png"
+                      class="" title="image-20250328225458852"
+                > 
 
 <p>对比一下burp里面的。发现后续还有url编码，那我们就将他再url编码一下</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328225725550.png"
+                      class="" title="image-20250328225725550"
+                > 
 
 <p>发现一摸一样。所以我们就拿到了他的前端加密方式</p>
 <h3 id="autoDecoder"><a href="#autoDecoder" class="headerlink" title="autoDecoder"></a>autoDecoder</h3><p>在burp上安装autoDecoder插件 <a class="link"   target="_blank" rel="noopener" href="https://github.com/f0ng/autoDecoder/releases/tag/0.52" >https://github.com/f0ng/autoDecoder/releases/tag/0.52<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
-  
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328232008002.png"
+                      class="" title="image-20250328232008002"
+                >  
 
 <p>这里一定要保存配置，可以取一个名字为AES_key</p>
 <p>然后配置需要加密的域名</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328235426775.png"
+                      class="" title="image-20250328235426775"
+                > 
 
 <p>这里也要保存，也可以保存为相同的名字AES_key</p>
 <p>然后我们将一个加密的数据包发到repeater那里去看看</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328233202979.png"
+                      class="" title="image-20250328233202979"
+                > 
 
 <p>多出来了一个这个模块</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328233218117.png"
+                      class="" title="image-20250328233218117"
+                > 
 
 <p>自动帮我将数据包解密成原文了，且是对的，然后我们把参数改成原文</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328235457902.png"
+                      class="" title="image-20250328235457902"
+                > 
 
 <p>不用像网上别人那种右上角有个autoRepeater，也不用选中再加密，直接<strong>Send</strong> </p>
 <p>然后修改我们的密码为正确的密码</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328235559831.png"
+                      class="" title="image-20250328235559831"
+                > 
 
 <p>然后我们可以在logger日志这个地方看一下我们加密发的包</p>
- 
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/28/encrypt-labs/image-20250328235938970.png"
+                      class="" title="image-20250328235938970"
+                > 
 
 <p>数据被正确加密了</p>
 
@@ -465,7 +570,7 @@
 						<i class="fa-solid fa-chevron-left"></i>
 					</span>
 					<span class="title flex justify-center items-center">
-						<span class="post-nav-title-item">提取词类频率以及朴素贝叶斯</span>
+						<span class="post-nav-title-item">朴素贝叶斯和拉普拉斯平滑</span>
 						<span class="post-nav-item">上一篇</span>
 					</span>
 				</a>
